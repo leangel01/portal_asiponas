@@ -1,7 +1,7 @@
 import React from "react";
 import { Refine, Authenticated } from "@refinedev/core";
 import { ThemedLayout, ErrorComponent, useNotificationProvider } from "@refinedev/antd";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { HashRouter, Routes, Route, Outlet } from "react-router-dom";
 import "@refinedev/antd/dist/reset.css";
 
 import { authProvider } from "./providers/authProvider";
@@ -16,7 +16,7 @@ export const App: React.FC = () => {
   const notificationProvider = useNotificationProvider();
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Refine
         dataProvider={dataProvider}
         authProvider={authProvider}
@@ -60,7 +60,7 @@ export const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
         </Routes>
       </Refine>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
