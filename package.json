@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "homepage": "https://leangel01.github.io/portal_asiponas/",
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@refinedev/antd": "^6.0.1",
@@ -41,6 +42,7 @@
     "build": "tsc && refine build",
     "start": "refine start",
     "refine": "refine",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "browserslist": {
