@@ -11,6 +11,8 @@ import { dataProvider } from "./providers/data";
 import { LoginPage } from "./modules/auth";
 import { UserList, UserCreate } from "./modules/users";
 import { DashboardPage } from "./modules/dashboard";
+import { Header } from "./components";
+import "./theme.css";
 
 export const App: React.FC = () => {
   const notificationProvider = useNotificationProvider();
@@ -44,7 +46,7 @@ export const App: React.FC = () => {
           <Route
             element={
               <Authenticated key="auth-routes" fallback={<LoginPage />}>
-                <ThemedLayout>
+                <ThemedLayout Header={Header} Sider={() => null}>
                   <Outlet />
                 </ThemedLayout>
               </Authenticated>

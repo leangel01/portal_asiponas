@@ -1,39 +1,42 @@
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
-import { useGetIdentity } from "@refinedev/core";
+import { useGetIdentity, useLogout } from "@refinedev/core";
 import {
   Avatar,
+  Button,
   Layout as AntdLayout,
+  Menu,
   Space,
   Switch,
-  theme,
   Typography,
 } from "antd";
 import React, { useContext } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { ColorModeContext } from "../../contexts/color-mode";
 
 const { Text } = Typography;
-const { useToken } = theme;
-
 type IUser = {
-  id: number;
-  name: string;
-  avatar: string;
+  id: string;
+  full_name?: string;
+  email?: string;
 };
 
 export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   sticky = true,
 }) => {
-  const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
+  const { mutate: logout } = useLogout();
+  const location = useLocation();
   const { mode, setMode } = useContext(ColorModeContext);
 
   const headerStyles: React.CSSProperties = {
-    backgroundColor: token.colorBgElevated,
+    backgroundColor: "var(--asipona-green)",
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
-    padding: "0px 24px",
-    height: "64px",
+    padding: "0 22px",
+    height: "56px",
+    gap: "18px",
+    boxShadow: "0 1px 0 var(--asipona-border)",
   };
 
   if (sticky) {
@@ -44,16 +47,19 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
 
   return (
     <AntdLayout.Header style={headerStyles}>
-      <Space>
+      <div className="asipona-brand">ASIPONA <span>SEMAR</span></div>
+      <Menu mode="horizontal" selectedKeys={[location.pathname === "/users" ? "users" : "dashboard"]} className="asipona-menu" selectable theme="dark" items={[{ key: "dashboard", label: <Link to="/">Dashboard</Link> }, { key: "users", label: <Link to="/users">Usuarios</Link> }]} />
+      <Space className="asipona-user-tools">
         <Switch
-          checkedChildren="🌛"
-          unCheckedChildren="🔆"
+          checkedChildren="☾"
+          unCheckedChildren="☀"
           onChange={() => setMode(mode === "light" ? "dark" : "light")}
-          defaultChecked={mode === "dark"}
+          checked={mode === "dark"}
         />
         <Space style={{ marginLeft: "8px" }} size="middle">
-          {user?.name && <Text strong>{user.name}</Text>}
-          {user?.avatar && <Avatar src={user?.avatar} alt={user?.name} />}
+          {user?.full_name && <Text strong>{user.full_name}</Text>}
+          <Avatar size="small">{(user?.full_name || user?.email || "U").charAt(0).toUpperCase()}</Avatar>
+          <Button type="text" size="small" className="logout-button" onClick={() => logout()}>Salir</Button>
         </Space>
       </Space>
     </AntdLayout.Header>

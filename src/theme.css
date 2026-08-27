@@ -1,0 +1,49 @@
+:root {
+  --asipona-burgundy: #9b2247;
+  --asipona-burgundy-deep: #611232;
+  --asipona-green: #1e5b4f;
+  --asipona-green-deep: #002f2a;
+  --asipona-gold: #a57f2c;
+  --asipona-gold-soft: #e6d194;
+  --asipona-ink: #15191d;
+  --asipona-border: rgba(230, 225, 210, 0.25);
+}
+
+html, body, #root { min-height: 100%; }
+body { margin: 0; background: var(--asipona-page); }
+
+.asipona-brand { color: #fff; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+.asipona-brand span { color: var(--asipona-gold-soft); font-size: 10px; margin-left: 5px; }
+.asipona-menu { flex: 1; min-width: 0; background: transparent !important; border-bottom: 0 !important; }
+.asipona-menu .ant-menu-item { color: rgba(255,255,255,.78) !important; font-size: 12px; }
+.asipona-menu .ant-menu-item-selected, .asipona-menu .ant-menu-item:hover { color: #fff !important; }
+.asipona-menu .ant-menu-item-selected::after { border-bottom-color: var(--asipona-gold-soft) !important; }
+.asipona-user-tools { flex: 0 0 auto; }
+.asipona-user-tools .ant-typography { color: rgba(255,255,255,.9); font-size: 12px; }
+.logout-button { color: #fff !important; padding-inline: 7px !important; }
+.logout-button:hover { color: var(--asipona-gold-soft) !important; background: rgba(255,255,255,.1) !important; }
+.asipona-menu .ant-menu-title-content a { color: inherit; }
+
+[data-theme="dark"] {
+  --asipona-page: #101718;
+  --asipona-panel: #172322;
+  --asipona-border-soft: #2a4540;
+}
+[data-theme="light"] {
+  --asipona-page: #f3f6f3;
+  --asipona-panel: #fff;
+  --asipona-border-soft: #d8e2de;
+}
+
+.ant-layout { background: var(--asipona-page) !important; }
+.ant-layout-content { background: var(--asipona-page); }
+.ant-layout-header { z-index: 10; }
+.ant-menu-dark .ant-menu-item-selected { background: rgba(230, 209, 148, .18) !important; }
+.ant-menu-dark .ant-menu-item-selected a { color: #fff !important; }
+
+@media (max-width: 760px) {
+  .ant-layout-header { padding: 0 12px !important; gap: 8px !important; }
+  .asipona-brand { font-size: 12px; }
+  .asipona-brand span, .asipona-user-tools .ant-typography { display: none; }
+  .asipona-menu .ant-menu-item { padding-inline: 8px !important; }
+}

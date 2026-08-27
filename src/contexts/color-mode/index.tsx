@@ -31,6 +31,7 @@ export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
 
   useEffect(() => {
     window.localStorage.setItem("colorMode", mode);
+    document.documentElement.dataset.theme = mode;
   }, [mode]);
 
   const setColorMode = () => {
@@ -54,6 +55,18 @@ export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
         // you can change the theme colors here. example: ...RefineThemes.Magenta,
         theme={{
           ...RefineThemes.Blue,
+          token: {
+            colorPrimary: "#9b2247",
+            colorInfo: "#1e5b4f",
+            colorSuccess: "#1e5b4f",
+            colorWarning: "#a57f2c",
+            colorLink: "#9b2247",
+            borderRadius: 6,
+          },
+          components: {
+            Button: { colorPrimary: "#9b2247", colorPrimaryHover: "#b52b55" },
+            Layout: { headerBg: "#1e5b4f", siderBg: "#002f2a" },
+          },
           algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
         }}
       >
