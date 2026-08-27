@@ -1,70 +1,67 @@
-import {
-  Refine,
-  GitHubBanner,
-  WelcomePage,
-  Authenticated,
-} from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-
-import {
-  AuthPage,
-  ErrorComponent,
-  useNotificationProvider,
-  ThemedLayout,
-  ThemedSider,
-} from "@refinedev/antd";
+import React from "react";
+import { Refine, Authenticated } from "@refinedev/core";
+import { ThemedLayout, ErrorComponent, useNotificationProvider } from "@refinedev/antd";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import "@refinedev/antd/dist/reset.css";
 
-import { liveProvider } from "@refinedev/supabase";
-import { App as AntdApp } from "antd";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router";
-import routerProvider, {
-  NavigateToResource,
-  CatchAllNavigate,
-  UnsavedChangesNotifier,
-  DocumentTitleHandler,
-} from "@refinedev/react-router";
-import { supabaseClient } from "./providers/supabase-client";
+import { authProvider } from "./providers/authProvider";
+import { accessControlProvider } from "./providers/accessControl";
 import { dataProvider } from "./providers/data";
-import { ColorModeContextProvider } from "./contexts/color-mode";
-import { Header } from "./components/header";
-import authProvider from "./providers/auth";
 
-function App() {
+import { LoginPage } from "./modules/auth";
+import { UserList, UserCreate } from "./modules/users";
+import { DashboardPage } from "./modules/dashboard";
+
+export const App: React.FC = () => {
+  const notificationProvider = useNotificationProvider();
+
   return (
     <BrowserRouter>
-      <GitHubBanner />
-      <RefineKbarProvider>
-        <ColorModeContextProvider>
-          <AntdApp>
-            <DevtoolsProvider>
-              <Refine
-                dataProvider={dataProvider}
-                liveProvider={liveProvider(supabaseClient)}
-                authProvider={authProvider}
-                routerProvider={routerProvider}
-                notificationProvider={useNotificationProvider}
-                options={{
-                  syncWithLocation: true,
-                  warnWhenUnsavedChanges: true,
-                  projectId: "yLRykY-7PkhSM-ze0zXj",
-                }}
-              >
-                <Routes>
-                  <Route index element={<WelcomePage />} />
-                </Routes>
-                <RefineKbar />
-                <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
-              </Refine>
-              <DevtoolsPanel />
-            </DevtoolsProvider>
-          </AntdApp>
-        </ColorModeContextProvider>
-      </RefineKbarProvider>
+      <Refine
+        dataProvider={dataProvider}
+        authProvider={authProvider}
+        accessControlProvider={accessControlProvider}
+        notificationProvider={notificationProvider}
+        resources={[
+          {
+            name: "dashboard",
+            list: "/",
+            meta: { label: "Dashboard" },
+          },
+          {
+            name: "users",
+            list: "/users",
+            create: "/users/create",
+            meta: { label: "Usuarios" },
+          },
+          {
+            name: "asiponas",
+            meta: { label: "ASIPONAs" },
+          },
+        ]}
+      >
+        <Routes>
+          <Route
+            element={
+              <Authenticated key="auth-routes" fallback={<LoginPage />}>
+                <ThemedLayout>
+                  <Outlet />
+                </ThemedLayout>
+              </Authenticated>
+            }
+          >
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/users">
+              <Route index element={<UserList />} />
+              <Route path="create" element={<UserCreate />} />
+            </Route>
+            <Route path="*" element={<ErrorComponent />} />
+          </Route>
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </Refine>
     </BrowserRouter>
   );
-}
+};
 
 export default App;
