@@ -7,13 +7,13 @@ const rolePermissions: Record<string, Record<string, string[]>> = {
     users: ["list", "create", "edit", "delete", "show"],
     asiponas: ["list", "create", "edit", "delete", "show"],
     contracts: ["list", "create", "edit", "delete", "show"],
-    dashboard: ["list", "show"],
+    dashboard: ["list", "show", "create", "edit", "delete"],
   },
   admin_asipona: {
     users: ["list", "show"],
     asiponas: ["list", "show"],
     contracts: ["list", "create", "edit", "delete", "show"],
-    dashboard: ["list", "show"],
+    dashboard: ["list", "show", "create", "edit", "delete"],
   },
   viewer: {
     users: [],

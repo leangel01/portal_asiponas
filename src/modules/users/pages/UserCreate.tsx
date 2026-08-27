@@ -10,11 +10,10 @@ type UserCreateFormValues = {
   full_name: string;
   department?: string;
   role: string;
-  asipona_id?: string;
+  asipona_ids?: string[];
 };
 
 export const UserCreate: React.FC = () => {
-  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const { selectProps: asiponaSelectProps } = useSelect({
@@ -41,8 +40,8 @@ export const UserCreate: React.FC = () => {
   };
 
   return (
-    <Create saveButtonProps={{ onClick: () => form.submit() }}>
-      <Form form={form} layout="vertical" onFinish={onFinish}>
+    <Create saveButtonProps={{ onClick: () => (document.getElementById("user-create-form") as HTMLFormElement | null)?.requestSubmit() }}>
+      <Form id="user-create-form" layout="vertical" onFinish={onFinish}>
         <Form.Item label="Correo Electrónico" name="email" rules={[{ required: true, type: "email" }]}>
           <Input placeholder="correo@ejemplo.gob.mx" />
         </Form.Item>
@@ -62,8 +61,8 @@ export const UserCreate: React.FC = () => {
             <Select.Option value="admin_general">Admin General</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="ASIPONA Asignada" name="asipona_id">
-          <Select {...asiponaSelectProps} allowClear placeholder="Selecciona ASIPONA" />
+        <Form.Item label="ASIPONAs asignadas" name="asipona_ids">
+          <Select {...asiponaSelectProps} mode="multiple" allowClear placeholder="Selecciona una o más ASIPONAs" />
         </Form.Item>
       </Form>
     </Create>

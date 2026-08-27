@@ -2,6 +2,10 @@ import { AuthProvider } from "@refinedev/core";
 import { supabaseClient } from "../config/supabaseClient";
 import { UserProfile } from "../types/auth";
 
+const multiAsiponaRpc = supabaseClient as unknown as {
+  rpc: (name: string) => Promise<{ data: string[] | null }>;
+};
+
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -36,35 +40,35 @@ export const authProvider: AuthProvider = {
   },
 
   getPermissions: async () => {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return null;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session?.user) return null;
 
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("role, asipona_id")
-      .eq("id", user.id)
-      .single();
+    const [{ data: role }, { data: asiponaIds }] = await Promise.all([
+      supabaseClient.rpc("get_my_role"),
+      multiAsiponaRpc.rpc("get_my_asipona_ids"),
+    ]);
 
-    return profile || { role: "viewer" };
+    return { role: role || "viewer", asipona_ids: asiponaIds || [], asipona_id: asiponaIds?.[0] || null };
   },
 
   getIdentity: async (): Promise<UserProfile | null> => {
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const user = session?.user;
     if (!user) return null;
 
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    const [{ data: role }, { data: asiponaIds }] = await Promise.all([
+      supabaseClient.rpc("get_my_role"),
+      multiAsiponaRpc.rpc("get_my_asipona_ids"),
+    ]);
 
     return {
       id: user.id,
       email: user.email || "",
-      full_name: profile?.full_name || user.email,
-      role: profile?.role || "viewer",
-      asipona_id: profile?.asipona_id,
-      department: profile?.department,
+      full_name: user.user_metadata?.full_name || user.email || "Usuario",
+      role: role || "viewer",
+      asipona_ids: asiponaIds || [],
+      asipona_id: asiponaIds?.[0] || null,
+      department: user.user_metadata?.department,
     };
   },
 

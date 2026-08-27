@@ -5,6 +5,7 @@ export interface UserProfile {
   full_name: string;
   email: string;
   role: UserRole;
+  asipona_ids: string[];
   asipona_id?: string | null;
   department?: string;
 }
