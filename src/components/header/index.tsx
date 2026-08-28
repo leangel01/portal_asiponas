@@ -18,6 +18,7 @@ type IUser = {
   id: string;
   full_name?: string;
   email?: string;
+  role?: string;
 };
 
 export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
@@ -48,7 +49,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   return (
     <AntdLayout.Header style={headerStyles}>
       <div className="asipona-brand">ASIPONA <span>SEMAR</span></div>
-      <Menu mode="horizontal" selectedKeys={[location.pathname === "/users" ? "users" : "dashboard"]} className="asipona-menu" selectable theme="dark" items={[{ key: "dashboard", label: <Link to="/">Dashboard</Link> }, { key: "users", label: <Link to="/users">Usuarios</Link> }]} />
+      <Menu mode="horizontal" selectedKeys={[location.pathname === "/users" ? "users" : "dashboard"]} className="asipona-menu" selectable theme="dark" items={[{ key: "dashboard", label: <Link to="/">Dashboard</Link> }, ...(user?.role === "admin_general" ? [{ key: "users", label: <Link to="/users">Usuarios</Link> }] : [])]} />
       <Space className="asipona-user-tools">
         <Switch
           checkedChildren="☾"

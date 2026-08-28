@@ -3,7 +3,7 @@ import { supabaseClient } from "../config/supabaseClient";
 import { UserProfile } from "../types/auth";
 
 const multiAsiponaRpc = supabaseClient as unknown as {
-  rpc: (name: string) => Promise<{ data: string[] | null }>;
+  rpc: (name: string, args?: Record<string, unknown>) => Promise<{ data: any; error?: { message: string } | null }>;
 };
 
 export const authProvider: AuthProvider = {
@@ -21,7 +21,8 @@ export const authProvider: AuthProvider = {
     }
 
     if (data?.user) {
-      return { success: true, redirectTo: "/" };
+      const { data: mustChangePassword } = await multiAsiponaRpc.rpc("get_must_change_password");
+      return { success: true, redirectTo: mustChangePassword === true ? "/change-password" : "/" };
     }
 
     return { success: false, error: { message: "Credenciales inválidas", name: "AuthError" } };
@@ -35,7 +36,11 @@ export const authProvider: AuthProvider = {
 
   check: async () => {
     const { data } = await supabaseClient.auth.getSession();
-    if (data.session) return { authenticated: true };
+    if (data.session) {
+      const { data: mustChangePassword } = await multiAsiponaRpc.rpc("get_must_change_password");
+      if (mustChangePassword === true) return { authenticated: true, redirectTo: "/change-password" };
+      return { authenticated: true };
+    }
     return { authenticated: false, redirectTo: "/login", logout: true };
   },
 

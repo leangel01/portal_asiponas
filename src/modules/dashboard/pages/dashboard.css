@@ -45,6 +45,14 @@
 .inner-card, .module-card .ant-card { border-color: #dce8e7; background: rgba(248, 252, 251, .8); }
 .module-card .ant-list-item-meta-title { color: #17324d; }
 .module-card .ant-list-item-meta-description, .module-card .ant-typography-secondary { color: #62777b; }
+.module-card .ant-list-item { align-items: flex-start; }
+.module-card .ant-list-item-actions { margin-inline-start: 18px; }
+.module-card .ant-list-item .ant-space-vertical { min-width: 190px; }
+.news-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; color: #17324d; }
+.news-heading span { display: flex; flex-direction: column; gap: 4px; }
+.news-heading small { color: #62777b; font-size: 11px; }
+.news-expanded { display: flex; flex-direction: column; gap: 12px; color: #526a6f; font-size: 12px; line-height: 1.55; }
+.news-expanded p { margin: 0; }
 
 [data-theme="dark"] .asipona-dashboard { color: #e6efed; background: linear-gradient(135deg, #101718 0%, #142321 100%); }
 [data-theme="dark"] .identity-strip, [data-theme="dark"] .metric-tile, [data-theme="dark"] .module-card { background: rgba(23, 35, 34, .92); border-color: #2a4540; }
@@ -57,6 +65,8 @@
 [data-theme="dark"] .module-card .ant-table-tbody > tr > td { color: #d5e5e1; border-bottom-color: #2a4540; }
 [data-theme="dark"] .module-card .ant-list-item { border-bottom-color: #2a4540; }
 [data-theme="dark"] .module-card .ant-list-item-meta-description { color: #b2c8c1; }
+[data-theme="dark"] .module-card .news-heading { color: #f2f7f5; }
+[data-theme="dark"] .module-card .news-heading small, [data-theme="dark"] .module-card .news-expanded { color: #c0d4ce; }
 [data-theme="dark"] .module-card .ant-statistic-title { color: #b2c8c1; }
 [data-theme="dark"] .module-card .ant-statistic-content { color: #f2f7f5; }
 [data-theme="dark"] .module-card .ant-card-head-title { color: #e6efed; }
