@@ -1,27 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { List, useSelect, useTable, CreateButton } from "@refinedev/antd";
-import { Button, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message } from "antd";
+import { List, useSelect, useTable } from "@refinedev/antd";
+import { Button, Form, Input, Modal, Select, Space, Table, Tag, message } from "antd";
 import { useCan, useGetIdentity } from "@refinedev/core";
 import { supabaseClient } from "../../../config/supabaseClient";
 import type { UserProfile } from "../../../types/auth";
 
 type AsiponaAssignment = { profile_id: string; asipona_id: string };
 type AsiponaName = { id: string; name: string };
-type AsiponaFormValues = {
-  code: string;
-  name: string;
+type UserEditFormValues = {
   full_name: string;
-  region: string;
-  coordinating_entity?: string;
-  director?: string;
-  website?: string;
-  concession_area_ha?: number;
-  concession_area_detail?: string;
-  cpd_area_ha?: number;
-  teu_capacity_annual?: number;
-  max_draft_meters?: number;
-  berth_positions?: number;
-  annual_cargo_volume_tons?: number;
+  department?: string;
+  role: string;
 };
 const relationClient = supabaseClient as unknown as {
   from: (table: string) => {
@@ -32,17 +21,17 @@ const relationClient = supabaseClient as unknown as {
 
 export const UserList: React.FC = () => {
   const { tableProps } = useTable({ resource: "profiles", syncWithLocation: true });
-  const { data: canCreate } = useCan({ resource: "users", action: "create" });
   const { data: identity } = useGetIdentity<UserProfile>();
   const { data: canAssign } = useCan({ resource: "users", action: "edit" });
+  const isAdminGeneral = identity?.role === "admin_general";
   const [asiponaNames, setAsiponaNames] = useState<Record<string, string>>({});
   const [asiponaIdsByProfile, setAsiponaIdsByProfile] = useState<Record<string, string[]>>({});
   const [assignmentUserId, setAssignmentUserId] = useState<string>();
   const [assignmentIds, setAssignmentIds] = useState<string[]>([]);
   const [savingAssignment, setSavingAssignment] = useState(false);
-  const [asiponaModalOpen, setAsiponaModalOpen] = useState(false);
-  const [savingAsipona, setSavingAsipona] = useState(false);
-  const [asiponaForm] = Form.useForm<AsiponaFormValues>();
+  const [userEditUserId, setUserEditUserId] = useState<string>();
+  const [savingUser, setSavingUser] = useState(false);
+  const [userEditForm] = Form.useForm<UserEditFormValues>();
   const { selectProps: asiponaSelectProps } = useSelect({ resource: "asiponas", optionLabel: "name", optionValue: "id" });
 
   useEffect(() => {
@@ -84,22 +73,53 @@ export const UserList: React.FC = () => {
     window.location.reload();
   };
 
-  const saveAsipona = async (values: AsiponaFormValues) => {
-    setSavingAsipona(true);
-    const { error } = await supabaseClient.from("asiponas").insert(values);
-    setSavingAsipona(false);
-    if (error) {
-      message.error(error.message);
+  const openUserEditor = (record: Record<string, any>) => {
+    if (!isAdminGeneral) {
+      message.error("Solo el administrador general puede editar datos de usuarios.");
       return;
     }
-    message.success("ASIPONA registrada correctamente");
-    setAsiponaModalOpen(false);
-    asiponaForm.resetFields();
+
+    const userId = record.id as string | undefined;
+    if (!userId) return;
+    setUserEditUserId(userId);
+    userEditForm.setFieldsValue({
+      full_name: record.full_name || "",
+      department: record.department || "",
+      role: record.role || "viewer",
+    });
+  };
+
+  const saveUser = async (values: UserEditFormValues) => {
+    if (!userEditUserId) return;
+    if (!isAdminGeneral) {
+      message.error("No tienes permisos para modificar perfiles de usuarios.");
+      return;
+    }
+
+    setSavingUser(true);
+    const { data, error } = await (supabaseClient as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+    }).rpc("update_user_profile_admin", {
+      target_user_id: userEditUserId,
+      new_full_name: values.full_name,
+      new_department: values.department || null,
+      new_role: values.role,
+    });
+    setSavingUser(false);
+
+    if (error) {
+      message.error(error.message || "No se pudo actualizar el perfil del usuario.");
+      return;
+    }
+
+    message.success(data ? "Datos del usuario actualizados" : "Usuario actualizado");
+    setUserEditUserId(undefined);
+    userEditForm.resetFields();
     window.location.reload();
   };
 
   return (
-    <List headerButtons={() => identity?.role === "admin_general" ? <Button type="primary" onClick={() => setAsiponaModalOpen(true)}>Registrar nueva ASIPONA</Button> : canCreate?.can === true ? <CreateButton resource="users">Nuevo Usuario</CreateButton> : null}>
+    <List>
       <Table {...tableProps} rowKey="id">
         <Table.Column dataIndex="full_name" title="Nombre Completo" />
         <Table.Column dataIndex="department" title="Departamento" />
@@ -116,7 +136,7 @@ export const UserList: React.FC = () => {
           title="ASIPONA"
           render={(value, record) => record.role === "admin_general" ? "Todas (General)" : asiponaNames[value] || "Sin asignar"}
         />
-        {canAssign?.can === true && <Table.Column title="Acciones" render={(_, record) => <Button size="small" onClick={() => openAssignment(record.id)}>Asignar ASIPONAs</Button>} />}
+        {isAdminGeneral && <Table.Column title="Acciones" render={(_, record) => <Space><Button size="small" onClick={() => openUserEditor(record)}>Editar</Button><Button size="small" onClick={() => openAssignment(record.id)}>Asignar ASIPONAs</Button></Space>} />}
       </Table>
       <Modal title="Asignar ASIPONAs" open={Boolean(assignmentUserId)} onCancel={() => setAssignmentUserId(undefined)} onOk={() => void saveAssignment()} confirmLoading={savingAssignment} okText="Guardar" cancelText="Cancelar">
         <Form layout="vertical">
@@ -125,26 +145,17 @@ export const UserList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-      <Modal title="Registrar nueva ASIPONA" open={asiponaModalOpen} onCancel={() => setAsiponaModalOpen(false)} onOk={() => void asiponaForm.submit()} confirmLoading={savingAsipona} okText="Registrar" cancelText="Cancelar" width={720}>
-        <Form form={asiponaForm} layout="vertical" onFinish={saveAsipona}>
-          <Space wrap style={{ width: "100%" }}>
-            <Form.Item label="Código" name="code" rules={[{ required: true }]}><Input /></Form.Item>
-            <Form.Item label="Nombre corto" name="name" rules={[{ required: true }]}><Input /></Form.Item>
-            <Form.Item label="Nombre oficial" name="full_name" rules={[{ required: true }]}><Input style={{ width: 430 }} /></Form.Item>
-            <Form.Item label="Región" name="region" rules={[{ required: true }]}><Input /></Form.Item>
-            <Form.Item label="Entidad coordinadora" name="coordinating_entity"><Input /></Form.Item>
-            <Form.Item label="Titular" name="director"><Input /></Form.Item>
-            <Form.Item label="Sitio web" name="website"><Input /></Form.Item>
-          </Space>
-          <Form.Item label="Detalle del área concesionada" name="concession_area_detail"><Input.TextArea rows={2} /></Form.Item>
-          <Space wrap style={{ width: "100%" }}>
-            <Form.Item label="Área concesionada (Ha)" name="concession_area_ha"><InputNumber min={0} /></Form.Item>
-            <Form.Item label="Superficie CPD (Ha)" name="cpd_area_ha"><InputNumber min={0} /></Form.Item>
-            <Form.Item label="Capacidad TEUs anual" name="teu_capacity_annual"><InputNumber min={0} /></Form.Item>
-            <Form.Item label="Calado máximo (m)" name="max_draft_meters"><InputNumber min={0} /></Form.Item>
-            <Form.Item label="Posiciones de atraque" name="berth_positions"><InputNumber min={0} /></Form.Item>
-            <Form.Item label="Carga anual (toneladas)" name="annual_cargo_volume_tons"><InputNumber min={0} /></Form.Item>
-          </Space>
+      <Modal title="Editar usuario" open={Boolean(userEditUserId)} onCancel={() => setUserEditUserId(undefined)} onOk={() => void userEditForm.submit()} confirmLoading={savingUser} okText="Guardar" cancelText="Cancelar">
+        <Form form={userEditForm} layout="vertical" onFinish={saveUser}>
+          <Form.Item label="Nombre completo" name="full_name" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item label="Departamento" name="department"><Input /></Form.Item>
+          <Form.Item label="Rol" name="role" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="viewer">Viewer</Select.Option>
+              <Select.Option value="admin_asipona">Admin de ASIPONA</Select.Option>
+              <Select.Option value="admin_general">Admin General</Select.Option>
+            </Select>
+          </Form.Item>
         </Form>
       </Modal>
     </List>

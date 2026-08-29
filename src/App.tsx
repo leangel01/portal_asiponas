@@ -9,7 +9,8 @@ import { accessControlProvider } from "./providers/accessControl";
 import { dataProvider } from "./providers/data";
 
 import { ChangePasswordPage, LoginPage } from "./modules/auth";
-import { UserList, UserCreate } from "./modules/users";
+import { UserList } from "./modules/users";
+import { AsiponaList } from "./modules/asiponas";
 import { DashboardPage } from "./modules/dashboard";
 import { Header } from "./components";
 import { useGetIdentity } from "@refinedev/core";
@@ -41,6 +42,7 @@ export const App: React.FC = () => {
           },
           {
             name: "asiponas",
+            list: "/asiponas",
             meta: { label: "ASIPONAs" },
           },
         ]}
@@ -58,10 +60,8 @@ export const App: React.FC = () => {
             }
           >
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/users">
-              <Route index element={<AdminGeneralOnly><UserList /></AdminGeneralOnly>} />
-              <Route path="create" element={<AdminGeneralOnly><UserCreate /></AdminGeneralOnly>} />
-            </Route>
+            <Route path="/users" element={<AdminGeneralOnly><UserList /></AdminGeneralOnly>} />
+            <Route path="/asiponas" element={<AdminGeneralOnly><AsiponaList /></AdminGeneralOnly>} />
             <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route path="*" element={<ErrorComponent />} />
           </Route>
@@ -93,11 +93,11 @@ const FirstLoginGuard: React.FC<React.PropsWithChildren> = ({ children }) => {
   }, [location.pathname]);
 
   if (mustChange === undefined) return null;
-  return mustChange ? <Navigate to="/change-password" replace /> : <>{children}</>;
+  return mustChange ? <Navigate to="/change-password" /> : <>{children}</>;
 };
 
 const AdminGeneralOnly: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { data: identity } = useGetIdentity<UserProfile>();
   if (!identity) return null;
-  return identity.role === "admin_general" ? <>{children}</> : <Navigate to="/" replace />;
+  return identity.role === "admin_general" ? <>{children}</> : <Navigate to="/" />;
 };

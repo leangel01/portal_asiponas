@@ -13,6 +13,7 @@ dist
 dist-ssr
 *.local
 supabase
+supabase_editions
 
 # Environment variables
 .env
