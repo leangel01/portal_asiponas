@@ -8,7 +8,7 @@ import { authProvider } from "./providers/authProvider";
 import { accessControlProvider } from "./providers/accessControl";
 import { dataProvider } from "./providers/data";
 
-import { ChangePasswordPage, LoginPage } from "./modules/auth";
+import { ChangePasswordPage, LoginPage, ResetPasswordPage } from "./modules/auth";
 import { UserList } from "./modules/users";
 import { AsiponaList } from "./modules/asiponas";
 import { DashboardPage } from "./modules/dashboard";
@@ -66,6 +66,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<ErrorComponent />} />
           </Route>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
       </Refine>
     </HashRouter>
