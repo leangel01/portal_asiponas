@@ -35,6 +35,17 @@ Refine's hooks and components simplifies the development process and eliminates 
     npm run start
 ```
 
+### Updating Supabase types
+
+`src/types/supabase.ts` is the generated TypeScript contract for the public schema. After applying a database migration, link the Supabase CLI to the project and run:
+
+```bash
+    supabase link --project-ref <project-id>
+    npm run supabase:types
+```
+
+Do not edit the generated table definitions manually; update the migration first and regenerate the file.
+
 ## Learn More
 
 To learn more about **Refine**, please check out the [Documentation](https://refine.dev/docs)

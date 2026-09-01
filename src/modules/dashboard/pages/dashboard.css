@@ -54,6 +54,22 @@
 .news-expanded { display: flex; flex-direction: column; gap: 12px; color: #526a6f; font-size: 12px; line-height: 1.55; }
 .news-expanded p { margin: 0; }
 
+.budget-history { margin-bottom: 22px; padding: 18px 20px 12px; border: 1px solid #dce8e7; background: rgba(248, 252, 251, .8); }
+.budget-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.budget-history-heading > div:first-child { display: flex; flex-direction: column; gap: 3px; }
+.budget-chart-wrap { position: relative; overflow-x: auto; }
+.budget-chart-text { fill: #718487; font-size: 12px; }
+.budget-history-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 4px; font-size: 12px; }
+.budget-history-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.budget-history-legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+.budget-tooltip { display: flex; flex-direction: column; gap: 4px; min-width: 172px; padding: 10px 12px; border: 1px solid #d5e3e2; border-radius: 4px; background: #fff; box-shadow: 0 5px 16px rgba(23, 50, 77, .12); font-size: 12px; }
+.budget-tooltip strong { color: #17324d; font-size: 13px; }
+.budget-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.budget-progress-value { margin: 12px 0 3px; color: #718487; font-size: 12px; text-align: right; }
+.budget-progress .ant-progress-bg { background-image: linear-gradient(100deg, #d97706 0%, #fbbf24 45%, #d97706 75%); background-size: 200% 100%; box-shadow: 0 0 10px rgba(245, 158, 11, .5); transition: width 1.8s cubic-bezier(.22, 1, .36, 1); animation: budget-progress-shimmer 1.1s linear infinite; }
+@keyframes budget-progress-shimmer { from { background-position: 200% 0; } to { background-position: 0 0; } }
+.budget-items-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 10px; padding-bottom: 10px; border-bottom: 1px solid #dce8e7; }
+
 [data-theme="dark"] .asipona-dashboard { color: #e6efed; background: linear-gradient(135deg, #101718 0%, #142321 100%); }
 [data-theme="dark"] .identity-strip, [data-theme="dark"] .metric-tile, [data-theme="dark"] .module-card { background: rgba(23, 35, 34, .92); border-color: #2a4540; }
 [data-theme="dark"] .metric-value, [data-theme="dark"] .module-card .ant-list-item-meta-title { color: #f2f7f5; }
@@ -84,6 +100,14 @@
 [data-theme="dark"] .module-card h3 { color: #f2f7f5 !important; }
 [data-theme="dark"] .dashboard-hero .asipona-selector .ant-select-selector { color: #fff; background: #123b35; border-color: var(--asipona-gold-soft); }
 [data-theme="dark"] .dashboard-hero .asipona-selector .ant-select-selection-item { color: #fff !important; }
+[data-theme="dark"] .budget-history { background: #1b2b2a; border-color: #2a4540; }
+[data-theme="dark"] .budget-chart-text { fill: #b2c8c1; }
+[data-theme="dark"] .budget-tooltip { border-color: #36564f; background: #172322; box-shadow: 0 5px 16px rgba(0, 0, 0, .25); }
+[data-theme="dark"] .budget-tooltip strong { color: #f2f7f5; }
+[data-theme="dark"] .recharts-legend-item-text { color: #d7e7e2 !important; }
+[data-theme="dark"] .budget-progress .ant-progress-bg { box-shadow: 0 0 13px rgba(251, 191, 36, .65); }
+[data-theme="dark"] .budget-progress-value { color: #b2c8c1; }
+[data-theme="dark"] .budget-items-heading { border-bottom-color: #2a4540; }
 [data-theme="dark"] .ant-select-dropdown { background: #172322; }
 [data-theme="dark"] .ant-select-item { color: #d7e7e2; }
 [data-theme="dark"] .ant-select-item-option-active { background: #23453e; }
@@ -107,4 +131,8 @@
   .identity-strip .muted-dot { display: none; }
   .module-card { padding: 0; }
   .module-actions { align-items: flex-start; flex-direction: column; }
+  .budget-history-heading { flex-direction: column; }
+  .budget-history-legend { justify-content: flex-start; }
+  .budget-progress-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .budget-items-heading { align-items: flex-start; flex-direction: column; }
 }

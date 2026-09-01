@@ -38,6 +38,16 @@ import { useCan, useGetIdentity } from "@refinedev/core";
 import { supabaseClient } from "../../../config/supabaseClient";
 import type { Database } from "../../../types/supabase";
 import type { UserProfile } from "../../../types/auth";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import "./dashboard.css";
 
 const { Title, Text } = Typography;
@@ -96,6 +106,11 @@ const money = (value: number) =>
     currency: "MXN",
     maximumFractionDigits: 0,
   }).format(value || 0);
+const moneyMillions = (value: number) =>
+  `$${new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format((value || 0) / 1_000_000)} M`;
 const bounded = (value: number | null) =>
   Math.max(0, Math.min(100, value || 0));
 const statusColor = (status: string) =>
@@ -110,6 +125,18 @@ export const DashboardPage: React.FC = () => {
   const { data: canCreate } = useCan({
     resource: "dashboard",
     action: "create",
+  });
+  const { data: canCreateBudgetItem } = useCan({
+    resource: "budget_items",
+    action: "create",
+  });
+  const { data: canEditBudgetItem } = useCan({
+    resource: "budget_items",
+    action: "edit",
+  });
+  const { data: canDeleteBudgetItem } = useCan({
+    resource: "budget_items",
+    action: "delete",
   });
   const { data: canEdit } = useCan({ resource: "dashboard", action: "edit" });
   const { data: canDelete } = useCan({
@@ -244,7 +271,10 @@ export const DashboardPage: React.FC = () => {
   const scoped = useMemo(() => {
     const belongs = <T extends { asipona_id: string }>(items: T[]) =>
       items.filter((item) => item.asipona_id === current?.id);
-    const budget = data.budgets.find((item) => item.asipona_id === current?.id);
+    const budgets = data.budgets.filter(
+      (item) => item.asipona_id === current?.id,
+    );
+    const budget = budgets[0];
     return {
       contacts: belongs(data.contacts),
       locations: belongs(data.locations),
@@ -253,6 +283,7 @@ export const DashboardPage: React.FC = () => {
       contracts: belongs(data.contracts),
       investments: belongs(data.investments),
       budget,
+      budgets,
       budgetItems: data.budgetItems.filter(
         (item) => item.budget_id === budget?.id,
       ),
@@ -527,7 +558,7 @@ export const DashboardPage: React.FC = () => {
         ))}
       </div>
       <Card className="module-card" variant="borderless">
-        {activeModule !== "Resumen" && (
+        {activeModule !== "Resumen" && activeModule !== "Presupuesto" && (
           <div className="module-actions">
             <Text type="secondary">
               Gestión de {activeModule.toLowerCase()}
@@ -582,9 +613,15 @@ export const DashboardPage: React.FC = () => {
         {activeModule === "Presupuesto" && (
           <BudgetView
             budget={scoped.budget}
+            budgets={scoped.budgets}
             items={scoped.budgetItems}
-            canEdit={canEdit?.can === true}
-            canDelete={canDelete?.can === true}
+            canEdit={canEditBudgetItem?.can === true}
+            canDelete={canDeleteBudgetItem?.can === true}
+            onAdd={
+              canCreateBudgetItem?.can === true
+                ? () => openCrud("budget_items")
+                : undefined
+            }
             onEdit={(item) => openCrud("budget_items", item)}
             onDelete={(id) => void deleteCrud("budget_items", id)}
           />
@@ -928,49 +965,88 @@ function LocationList({
 }
 function BudgetView({
   budget,
+  budgets,
   items,
   canEdit,
   canDelete,
+  onAdd,
   onEdit,
   onDelete,
 }: {
   budget?: Budget;
+  budgets: Budget[];
   items: BudgetItem[];
   canEdit?: boolean;
   canDelete?: boolean;
+  onAdd?: () => void;
   onEdit?: (item: BudgetItem) => void;
   onDelete?: (id: string) => void;
 }) {
-  if (!budget) return <EmptyState label="presupuesto" />;
   const execution = Math.round(
-    (budget.spent_total / Math.max(budget.assigned_total, 1)) * 100,
+    ((budget?.spent_total || 0) / Math.max(budget?.assigned_total || 1, 1)) *
+      100,
+  );
+  const [animatedExecution, setAnimatedExecution] = useState(0);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAnimatedExecution(execution));
+    return () => cancelAnimationFrame(frame);
+  }, [execution]);
+
+  if (!budget) return <EmptyState label="presupuesto" />;
+
+  const latestBudget = budgets.reduce(
+    (latest, item) =>
+      item.fiscal_year > latest.fiscal_year ? item : latest,
+    budget,
   );
   return (
     <>
+      <div className="budget-progress-heading">
+        <Text strong>Avance gasto {latestBudget.fiscal_year}</Text>
+      </div>
       <Row gutter={16}>
-        <Col xs={24} md={8}>
-          <Statistic
-            title="Presupuesto asignado"
+        <Col xs={24} sm={12} lg={6}>
+          <AnimatedMoneyStatistic
+            title="Presupuesto aprobado"
             value={budget.assigned_total}
-            formatter={(value) => money(Number(value))}
           />
         </Col>
-        <Col xs={24} md={8}>
-          <Statistic
-            title="Egresos ejecutados"
+        <Col xs={24} sm={12} lg={6}>
+          <AnimatedMoneyStatistic
+            title="Presupuesto modificado"
+            value={budget.modified_total}
+          />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <AnimatedMoneyStatistic
+            title="Presupuesto ejercido"
             value={budget.spent_total}
-            formatter={(value) => money(Number(value))}
           />
         </Col>
-        <Col xs={24} md={8}>
-          <Statistic
-            title="Ingresos propios"
-            value={budget.income_total}
-            formatter={(value) => money(Number(value))}
+        <Col xs={24} sm={12} lg={6}>
+          <AnimatedMoneyStatistic
+            title="Disponibilidad"
+            value={budget.modified_total - budget.spent_total}
           />
         </Col>
       </Row>
-      <Progress percent={execution} strokeColor="#d97706" />
+      <div className="budget-progress-value">{animatedExecution}%</div>
+      <Progress
+        percent={animatedExecution}
+        status={animatedExecution >= 100 ? "success" : "active"}
+        strokeColor="#d97706"
+        className="budget-progress"
+        showInfo={false}
+      />
+      <BudgetHistory budgets={budgets} />
+      <div className="budget-items-heading">
+        <Text strong>Conceptos de presupuesto</Text>
+        {onAdd && (
+          <Button type="primary" size="small" onClick={onAdd}>
+            Agregar concepto
+          </Button>
+        )}
+      </div>
       <Table
         rowKey="id"
         dataSource={items}
@@ -1009,6 +1085,141 @@ function BudgetView({
     </>
   );
 }
+
+function AnimatedMoneyStatistic({
+  title,
+  value,
+}: {
+  title: string;
+  value: number;
+}) {
+  const [animatedValue, setAnimatedValue] = useState(0);
+
+  useEffect(() => {
+    const duration = 900;
+    const start = performance.now();
+    let frame = 0;
+
+    const animate = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setAnimatedValue(value * easedProgress);
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    };
+
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+
+  return (
+    <Statistic
+      title={title}
+      value={animatedValue}
+      formatter={() => moneyMillions(animatedValue)}
+    />
+  );
+}
+
+const budgetSeries = [
+  { dataKey: "assigned_total", label: "Aprobado", color: "#1677ff" },
+  { dataKey: "modified_total", label: "Modificado", color: "#52c41a" },
+  { dataKey: "spent_total", label: "Ejercido", color: "#f5222d" },
+] as const;
+
+const formatMillions = (value: number) =>
+  `${new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format((value || 0) / 1_000_000)} M`;
+const formatAxisMillions = (value: number) =>
+  new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format((value || 0) / 1_000_000);
+
+function BudgetHistory({ budgets }: { budgets: Budget[] }) {
+  const history = [...budgets].sort(
+    (left, right) => left.fiscal_year - right.fiscal_year,
+  );
+  if (!history.length) return null;
+
+  return (
+    <section className="budget-history" aria-label="Histórico del presupuesto">
+      <div className="budget-history-heading">
+        <div>
+          <Text strong>Histórico presupuestal</Text>
+          <Text type="secondary">Millones de pesos</Text>
+        </div>
+      </div>
+      <div className="budget-chart-wrap">
+        <ResponsiveContainer width="100%" height={340}>
+          <LineChart data={history} margin={{ top: 14, right: 18, left: 18, bottom: 12 }}>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="4 4"
+              className="budget-grid"
+            />
+            <XAxis dataKey="fiscal_year" tick={{ className: "budget-chart-text" }} />
+            <YAxis tickFormatter={formatAxisMillions} tick={{ className: "budget-chart-text" }} />
+            <Tooltip content={<BudgetTooltip />} />
+            <Legend content={<BudgetLegend />} />
+            {budgetSeries.map((series) => (
+              <Line
+                key={series.dataKey}
+                type="monotone"
+                dataKey={series.dataKey}
+                name={series.label}
+                stroke={series.color}
+                strokeWidth={3}
+                dot={{ r: 5, strokeWidth: 2, fill: series.color }}
+                activeDot={{ r: 7 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
+
+function BudgetLegend() {
+  return (
+    <div className="budget-history-legend">
+      {budgetSeries.map((series) => (
+        <span key={series.dataKey} style={{ color: series.color }}>
+          <i style={{ backgroundColor: series.color }} />
+          {series.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function BudgetTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number }>;
+  label?: number | string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="budget-tooltip" role="status">
+      <strong>Año {label}</strong>
+      {budgetSeries.map((series) => {
+        const point = payload.find((item) => item.dataKey === series.dataKey);
+        return (
+          <span key={series.dataKey} style={{ color: series.color }}>
+            {series.label}: {formatMillions(Number(point?.value || 0))}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function NewsList({
   items,
   canEdit,
