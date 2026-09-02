@@ -48,7 +48,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
 
   return (
     <AntdLayout.Header style={headerStyles}>
-      <div className="asipona-brand">ASIPONA <span>SEMAR</span></div>
+      {/* <div className="asipona-brand">DGPCMC 2 <span>ASIPONAS</span></div> */}
       <Menu
         mode="horizontal"
         selectedKeys={[
