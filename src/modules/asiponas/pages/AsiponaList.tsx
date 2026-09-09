@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Form, Input, InputNumber, Modal, Space, Table, Tag, Typography, message } from "antd";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
 import { useCan, useGetIdentity } from "@refinedev/core";
 import { supabaseClient } from "../../../config/supabaseClient";
 import type { UserProfile } from "../../../types/auth";
@@ -173,7 +173,15 @@ export const AsiponaList: React.FC = () => {
               <Space>
                 {canEdit?.can === true && <Button size="small" onClick={() => openEdit(record)}>Editar</Button>}
                 {canDelete?.can === true && (
-                  <Button danger size="small" onClick={() => void deleteAsipona(record.id)}>Eliminar</Button>
+                  <Popconfirm
+                    title="¿Eliminar esta ASIPONA?"
+                    description="Esta acción no se puede deshacer."
+                    onConfirm={() => void deleteAsipona(record.id)}
+                    okText="Eliminar"
+                    cancelText="Cancelar"
+                  >
+                    <Button danger size="small">Eliminar</Button>
+                  </Popconfirm>
                 )}
               </Space>
             ),

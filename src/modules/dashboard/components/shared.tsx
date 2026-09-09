@@ -30,7 +30,7 @@ export const RowActions: React.FC<RowActionsProps> = ({
     )}
     {canDelete && (
       <Popconfirm
-        title="¿Eliminar este elemento?"
+        title="¿Está seguro de eliminar este elemento?"
         onConfirm={() => onDelete?.(item.id)}
         okText="Eliminar"
         cancelText="Cancelar"

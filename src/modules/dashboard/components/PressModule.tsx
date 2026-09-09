@@ -80,8 +80,14 @@ export const PressModule: React.FC<{
                   item={selected}
                   canEdit={canEdit}
                   canDelete={canDelete}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
+                  onEdit={(item) => {
+                    setSelected(undefined);
+                    onEdit?.(item);
+                  }}
+                  onDelete={(id) => {
+                    setSelected(undefined);
+                    onDelete?.(id);
+                  }}
                 />
               </div>
             </div>

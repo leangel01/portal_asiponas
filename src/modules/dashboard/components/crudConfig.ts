@@ -19,7 +19,7 @@ export type CrudField = {
 export const resourceByModule: Record<string, CrudResource | undefined> = {
   Directorio: "directory_contacts",
   Recintos: "locations",
-  Prensa: "news",
+  Noticias: "news",
   Metas: "goals",
   Contratos: "contracts",
   Inversiones: "investment_projects",
@@ -60,11 +60,12 @@ export const fieldsByResource: Record<CrudResource, CrudField[]> = {
   ],
   news: [
     { name: "title", label: "Titular", required: true },
-    { name: "source", label: "Fuente" },
+    { name: "source", label: "Fuente", required: true },
     { name: "summary", label: "Resumen" },
     { name: "category", label: "Categoría", type: "select", options: ["Operaciones", "Infraestructura", "Seguridad", "Finanzas", "Ambiental", "Institucional"] },
     { name: "sentiment", label: "Sentimiento", type: "select", options: ["Positivo", "Neutro", "Alerta"] },
-    { name: "published_date", label: "Fecha", type: "date" },
+    { name: "published_date", label: "Fecha", type: "date", required: true },
+    { name: "url", label: "Enlace de la noticia" },
   ],
   goals: [
     { name: "title", label: "Meta", required: true },
