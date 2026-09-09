@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  DatePicker,
   Form,
   Input,
   InputNumber,
@@ -113,6 +114,12 @@ export const DashboardPage: React.FC = () => {
   const [crudSaving, setCrudSaving] = useState(false);
   const [crudForm] = Form.useForm();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [newsDateRange, setNewsDateRange] = useState<[string, string]>();
+  const [newsDateOrder, setNewsDateOrder] = useState<"ascend" | "descend">(
+    "descend",
+  );
+  const [newsCategory, setNewsCategory] = useState<string>();
+  const [newsSentiment, setNewsSentiment] = useState<string>();
 
   useEffect(() => {
     const load = async () => {
@@ -165,12 +172,14 @@ export const DashboardPage: React.FC = () => {
         ).order("created_at", { ascending: false }),
       ]);
       const budgets = queries[3];
-      const budgetIds = (budgets.data || []).map((budget) => budget.id);
-      const budgetItems = budgetIds.length
+      const accessibleAsiponaIds = (queries[0].data || []).map(
+        (asipona) => asipona.id,
+      );
+      const budgetItems = accessibleAsiponaIds.length
         ? await supabaseClient
             .from("budget_items")
             .select("*")
-            .in("budget_id", budgetIds)
+            .in("asipona_id", accessibleAsiponaIds)
         : { data: [], error: null };
       if (queries.some((query) => query.error) || budgetItems.error)
         setError("No fue posible cargar la información del portal.");
@@ -224,10 +233,30 @@ export const DashboardPage: React.FC = () => {
       budget: budgets[0],
       budgets,
       budgetItems: data.budgetItems.filter(
-        (item) => item.budget_id === budgets[0]?.id,
+        (item) => item.asipona_id === current?.id,
       ),
     };
   }, [current?.id, data]);
+  const filteredNews = useMemo(() => {
+    const [from, to] = newsDateRange || [];
+    return [...scoped.news]
+      .filter((item) => !newsCategory || item.category === newsCategory)
+      .filter((item) => !newsSentiment || item.sentiment === newsSentiment)
+      .filter((item) => !from || item.published_date >= from)
+      .filter((item) => !to || item.published_date <= to)
+      .sort((left, right) => {
+        const difference = left.published_date.localeCompare(
+          right.published_date,
+        );
+        return newsDateOrder === "ascend" ? difference : -difference;
+      });
+  }, [newsCategory, newsDateOrder, newsDateRange, newsSentiment, scoped.news]);
+  const newsCategories = Array.from(
+    new Set(scoped.news.map((item) => item.category)),
+  );
+  const newsSentiments = Array.from(
+    new Set(scoped.news.map((item) => item.sentiment)),
+  );
   const modules = [
     ["Resumen", <GlobalOutlined />],
     ["Directorio", <TeamOutlined />],
@@ -264,7 +293,7 @@ export const DashboardPage: React.FC = () => {
     setCrudSaving(true);
     const payload =
       crudResource === "budget_items"
-        ? { ...values, budget_id: scoped.budget?.id }
+        ? { ...values, asipona_id: current?.id }
         : crudResource === "asiponas"
         ? values
         : { ...values, asipona_id: current.id };
@@ -388,12 +417,58 @@ export const DashboardPage: React.FC = () => {
           />
         )}
         {activeModule === "Noticias" && (
-          <PressModule
-            items={scoped.news}
-            {...permissions}
-            onEdit={(item) => openCrud("news", item)}
-            onDelete={(id) => void deleteCrud("news", id)}
-          />
+          <>
+            <div className="news-filters" aria-label="Filtros de noticias">
+              <DatePicker.RangePicker
+                format="DD/MM/YYYY"
+                onChange={(dates) =>
+                  setNewsDateRange(
+                    dates?.[0] && dates?.[1]
+                      ? [
+                          dates[0].format("YYYY-MM-DD"),
+                          dates[1].format("YYYY-MM-DD"),
+                        ]
+                      : undefined,
+                  )
+                }
+                placeholder={["Fecha inicial", "Fecha final"]}
+              />
+              <Select
+                allowClear
+                value={newsCategory}
+                placeholder="Categoría"
+                options={newsCategories.map((category) => ({
+                  label: category,
+                  value: category,
+                }))}
+                onChange={setNewsCategory}
+              />
+              <Select
+                allowClear
+                value={newsSentiment}
+                placeholder="Alerta"
+                options={newsSentiments.map((sentiment) => ({
+                  label: sentiment,
+                  value: sentiment,
+                }))}
+                onChange={setNewsSentiment}
+              />
+              <Select
+                value={newsDateOrder}
+                options={[
+                  { label: "Fecha más reciente", value: "descend" },
+                  { label: "Fecha más antigua", value: "ascend" },
+                ]}
+                onChange={setNewsDateOrder}
+              />
+            </div>
+            <PressModule
+              items={filteredNews}
+              {...permissions}
+              onEdit={(item) => openCrud("news", item)}
+              onDelete={(id) => void deleteCrud("news", id)}
+            />
+          </>
         )}
         {activeModule === "Metas" && (
           <GoalsModule

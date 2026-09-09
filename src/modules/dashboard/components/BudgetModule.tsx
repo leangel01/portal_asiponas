@@ -68,6 +68,14 @@ export const BudgetModule: React.FC<{
     return () => cancelAnimationFrame(frame);
   }, [execution]);
   if (!budget) return <EmptyState label="presupuesto" />;
+  const programFilters = Array.from(
+    new Set(items.map((item) => item.program_name)),
+  )
+    .sort((left, right) => left.localeCompare(right, "es"))
+    .map((program) => ({ text: program, value: program }));
+  const typeFilters = Array.from(new Set(items.map((item) => item.type)))
+    .sort((left, right) => left.localeCompare(right, "es"))
+    .map((type) => ({ text: type, value: type }));
   const latestBudget = budgets.reduce(
     (latest, item) => (item.fiscal_year > latest.fiscal_year ? item : latest),
     budget,
@@ -114,19 +122,40 @@ export const BudgetModule: React.FC<{
         dataSource={items}
         pagination={false}
         columns={[
-          { title: "Concepto", dataIndex: "concept" },
+          {
+            title: "Año",
+            dataIndex: "anio",
+            defaultSortOrder: "descend",
+            sorter: (left: BudgetItem, right: BudgetItem) =>
+              left.anio - right.anio,
+          },
+          {
+            title: "Programa",
+            dataIndex: "program_name",
+            filters: programFilters,
+            filterSearch: true,
+            onFilter: (value, item) => item.program_name === value,
+          },
           {
             title: "Tipo",
             dataIndex: "type",
+            filters: typeFilters,
+            filterSearch: true,
+            onFilter: (value, item) => item.type === value,
             render: (value) => <Tag>{value}</Tag>,
           },
           {
-            title: "Asignado",
-            dataIndex: "allocated",
+            title: "Aprobado",
+            dataIndex: "aproved",
             render: (value) => money(value),
           },
           {
-            title: "Ejecutado",
+            title: "Modificado",
+            dataIndex: "modified",
+            render: (value) => money(value),
+          },
+          {
+            title: "Ejercido",
             dataIndex: "spent",
             render: (value) => money(value),
           },
