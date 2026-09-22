@@ -273,6 +273,7 @@ export const DashboardPage: React.FC = () => {
   ) => {
     setCrudResource(resource);
     setCrudRecord(record);
+    crudForm.resetFields();
     crudForm.setFieldsValue(record || {});
     setCrudOpen(true);
   };
@@ -307,6 +308,8 @@ export const DashboardPage: React.FC = () => {
       return;
     }
     message.success(crudRecord ? "Elemento actualizado" : "Elemento agregado");
+    crudForm.resetFields();
+    setCrudRecord(undefined);
     setCrudOpen(false);
     setRefreshKey((value) => value + 1);
   };
@@ -500,7 +503,11 @@ export const DashboardPage: React.FC = () => {
           }`}
           open={crudOpen}
           confirmLoading={crudSaving}
-          onCancel={() => setCrudOpen(false)}
+          onCancel={() => {
+            crudForm.resetFields();
+            setCrudRecord(undefined);
+            setCrudOpen(false);
+          }}
           onOk={() => void crudForm.submit()}
           okText="Guardar"
           cancelText="Cancelar"

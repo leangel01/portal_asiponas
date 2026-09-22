@@ -127,8 +127,8 @@ export const fieldsByResource: Record<CrudResource, CrudField[]> = {
       ],
     },
     { name: "anio", label: "Año", type: "number", required: true },
-    { name: "spent", label: "Ejecutado", type: "number" },
     { name: "aproved", label: "Aprobado", type: "number" },
     { name: "modified", label: "Modificado", type: "number" },
+    { name: "spent", label: "Ejercido", type: "number" },
   ],
 };

@@ -36,6 +36,7 @@ export const ChangePasswordPage: React.FC = () => {
     }
 
     message.success("Contraseña actualizada correctamente");
+    form.resetFields();
     navigate("/");
   };
 

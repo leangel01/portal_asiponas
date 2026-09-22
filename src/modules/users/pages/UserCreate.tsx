@@ -15,6 +15,7 @@ type UserCreateFormValues = {
 
 export const UserCreate: React.FC = () => {
   const navigate = useNavigate();
+  const [form] = Form.useForm<UserCreateFormValues>();
 
   const { selectProps: asiponaSelectProps } = useSelect({
     resource: "asiponas",
@@ -32,6 +33,7 @@ export const UserCreate: React.FC = () => {
         message.error(`Error: ${error?.message || data?.error}`);
       } else {
         message.success("Usuario creado exitosamente");
+        form.resetFields();
         navigate("/users");
       }
     } catch {
@@ -41,7 +43,7 @@ export const UserCreate: React.FC = () => {
 
   return (
     <Create saveButtonProps={{ onClick: () => (document.getElementById("user-create-form") as HTMLFormElement | null)?.requestSubmit() }}>
-      <Form id="user-create-form" layout="vertical" onFinish={onFinish}>
+      <Form id="user-create-form" form={form} layout="vertical" onFinish={onFinish}>
         <Form.Item label="Correo Electrónico" name="email" rules={[{ required: true, type: "email" }]}>
           <Input placeholder="correo@ejemplo.gob.mx" />
         </Form.Item>

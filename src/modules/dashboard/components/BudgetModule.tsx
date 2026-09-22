@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Col,
@@ -38,6 +38,7 @@ const formatAxisMillions = (value: number) =>
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format((value || 0) / 1_000_000);
+type BudgetTableItem = BudgetItem & { isTotal?: boolean };
 
 export const BudgetModule: React.FC<{
   budget?: Budget;
@@ -63,19 +64,101 @@ export const BudgetModule: React.FC<{
       100,
   );
   const [animatedExecution, setAnimatedExecution] = useState(0);
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimatedExecution(execution));
     return () => cancelAnimationFrame(frame);
   }, [execution]);
+  const approvedByYear = useMemo(
+    () =>
+      items.reduce((totals, item) => {
+        totals.set(item.anio, (totals.get(item.anio) || 0) + item.aproved);
+        return totals;
+      }, new Map<number, number>()),
+    [items],
+  );
+  const availableYears = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          items
+            .filter(
+              (item) =>
+                (!selectedPrograms.length ||
+                  selectedPrograms.includes(item.program_name)) &&
+                (!selectedTypes.length || selectedTypes.includes(item.type)),
+            )
+            .map((item) => item.anio),
+        ),
+      ).sort((left, right) => right - left),
+    [items, selectedPrograms, selectedTypes],
+  );
+  const availablePrograms = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          items
+            .filter(
+              (item) =>
+                (!selectedYears.length || selectedYears.includes(item.anio)) &&
+                (!selectedTypes.length || selectedTypes.includes(item.type)),
+            )
+            .map((item) => item.program_name),
+        ),
+      ).sort((left, right) => left.localeCompare(right, "es")),
+    [items, selectedYears, selectedTypes],
+  );
+  const availableTypes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          items
+            .filter(
+              (item) =>
+                (!selectedYears.length || selectedYears.includes(item.anio)) &&
+                (!selectedPrograms.length ||
+                  selectedPrograms.includes(item.program_name)),
+            )
+            .map((item) => item.type),
+        ),
+      ).sort((left, right) => left.localeCompare(right, "es")),
+    [items, selectedYears, selectedPrograms],
+  );
+  const filteredItems = useMemo(
+    () =>
+      items
+        .filter(
+          (item) =>
+            (!selectedYears.length || selectedYears.includes(item.anio)) &&
+            (!selectedPrograms.length ||
+              selectedPrograms.includes(item.program_name)) &&
+            (!selectedTypes.length || selectedTypes.includes(item.type)),
+        )
+        .sort((left, right) => {
+          const yearOrder = right.anio - left.anio;
+          if (yearOrder) return yearOrder;
+          return (
+            (right.aproved / (approvedByYear.get(right.anio) || 1)) * 100 -
+            (left.aproved / (approvedByYear.get(left.anio) || 1)) * 100
+          );
+        }),
+    [items, selectedYears, selectedPrograms, selectedTypes, approvedByYear],
+  );
+  const totalRow = useMemo(
+    () =>
+      filteredItems.reduce(
+        (total, item) => ({
+          aproved: total.aproved + item.aproved,
+          modified: total.modified + item.modified,
+          spent: total.spent + item.spent,
+        }),
+        { aproved: 0, modified: 0, spent: 0 },
+      ),
+    [filteredItems],
+  );
   if (!budget) return <EmptyState label="presupuesto" />;
-  const programFilters = Array.from(
-    new Set(items.map((item) => item.program_name)),
-  )
-    .sort((left, right) => left.localeCompare(right, "es"))
-    .map((program) => ({ text: program, value: program }));
-  const typeFilters = Array.from(new Set(items.map((item) => item.type)))
-    .sort((left, right) => left.localeCompare(right, "es"))
-    .map((type) => ({ text: type, value: type }));
   const latestBudget = budgets.reduce(
     (latest, item) => (item.fiscal_year > latest.fiscal_year ? item : latest),
     budget,
@@ -117,32 +200,60 @@ export const BudgetModule: React.FC<{
           </Button>
         )}
       </div>
-      <Table
+      <Table<BudgetTableItem>
         rowKey="id"
-        dataSource={items}
+        dataSource={[
+          {
+            id: "budget-total",
+            anio: 0,
+            asipona_id: "",
+            created_at: "",
+            program_name: "",
+            type: "",
+            updated_at: "",
+            ...totalRow,
+            isTotal: true,
+          },
+          ...filteredItems,
+        ] as BudgetTableItem[]}
         pagination={false}
         columns={[
           {
             title: "Año",
             dataIndex: "anio",
-            defaultSortOrder: "descend",
-            sorter: (left: BudgetItem, right: BudgetItem) =>
-              left.anio - right.anio,
+            filters: availableYears.map((year) => ({
+              text: year,
+              value: year,
+            })),
+            filteredValue: selectedYears,
+            filterSearch: true,
+            onFilter: () => true,
+            render: (value, item: BudgetTableItem) =>
+              item.isTotal ? <Text strong>TOTAL</Text> : value,
           },
           {
             title: "Programa",
             dataIndex: "program_name",
-            filters: programFilters,
+            filters: availablePrograms.map((program) => ({
+              text: program,
+              value: program,
+            })),
+            filteredValue: selectedPrograms,
             filterSearch: true,
-            onFilter: (value, item) => item.program_name === value,
+            onFilter: () => true,
           },
           {
             title: "Tipo",
             dataIndex: "type",
-            filters: typeFilters,
+            filters: availableTypes.map((type) => ({
+              text: type,
+              value: type,
+            })),
+            filteredValue: selectedTypes,
             filterSearch: true,
-            onFilter: (value, item) => item.type === value,
-            render: (value) => <Tag>{value}</Tag>,
+            onFilter: () => true,
+            render: (value, item: BudgetTableItem) =>
+              item.isTotal ? null : <Tag>{value}</Tag>,
           },
           {
             title: "Aprobado",
@@ -160,18 +271,34 @@ export const BudgetModule: React.FC<{
             render: (value) => money(value),
           },
           {
-            title: "Acciones",
-            render: (_: unknown, item: BudgetItem) => (
-              <RowActions
-                item={item}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ),
+            title: "% del año",
+            key: "approvedPercentage",
+            render: (_: unknown, item: BudgetTableItem) => {
+              if (item.isTotal) return null;
+              const total = approvedByYear.get(item.anio) || 0;
+              return `${((item.aproved / total) * 100 || 0).toFixed(2)}%`;
+            },
+          },
+          {
+            title: "",
+            render: (_: unknown, item: BudgetTableItem) =>
+              item.isTotal ? null : (
+                <RowActions
+                  item={item}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ),
           },
         ]}
+        onChange={(_pagination, filters) => {
+          setSelectedYears((filters.anio || []) as number[]);
+          setSelectedPrograms((filters.program_name || []) as string[]);
+          setSelectedTypes((filters.type || []) as string[]);
+        }}
+        rowClassName={(item) => (item.isTotal ? "budget-total-row" : "")}
       />
     </>
   );

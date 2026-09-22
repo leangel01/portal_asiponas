@@ -70,6 +70,7 @@ export const UserList: React.FC = () => {
     }
     message.success("Asignaciones actualizadas");
     setAssignmentUserId(undefined);
+    setAssignmentIds([]);
     window.location.reload();
   };
 
@@ -138,14 +139,14 @@ export const UserList: React.FC = () => {
         />
         {isAdminGeneral && <Table.Column title="Acciones" render={(_, record) => <Space><Button size="small" onClick={() => openUserEditor(record)}>Editar</Button><Button size="small" onClick={() => openAssignment(record.id)}>Asignar ASIPONAs</Button></Space>} />}
       </Table>
-      <Modal title="Asignar ASIPONAs" open={Boolean(assignmentUserId)} onCancel={() => setAssignmentUserId(undefined)} onOk={() => void saveAssignment()} confirmLoading={savingAssignment} okText="Guardar" cancelText="Cancelar">
+      <Modal title="Asignar ASIPONAs" open={Boolean(assignmentUserId)} onCancel={() => { setAssignmentIds([]); setAssignmentUserId(undefined); }} onOk={() => void saveAssignment()} confirmLoading={savingAssignment} okText="Guardar" cancelText="Cancelar">
         <Form layout="vertical">
           <Form.Item label="ASIPONAs asignadas">
             <Select options={asiponaSelectProps.options} loading={asiponaSelectProps.loading} mode="multiple" value={assignmentIds} onChange={setAssignmentIds} placeholder="Selecciona una o más ASIPONAs" />
           </Form.Item>
         </Form>
       </Modal>
-      <Modal title="Editar usuario" open={Boolean(userEditUserId)} onCancel={() => setUserEditUserId(undefined)} onOk={() => void userEditForm.submit()} confirmLoading={savingUser} okText="Guardar" cancelText="Cancelar">
+      <Modal title="Editar usuario" open={Boolean(userEditUserId)} onCancel={() => { userEditForm.resetFields(); setUserEditUserId(undefined); }} onOk={() => void userEditForm.submit()} confirmLoading={savingUser} okText="Guardar" cancelText="Cancelar">
         <Form form={userEditForm} layout="vertical" onFinish={saveUser}>
           <Form.Item label="Nombre completo" name="full_name" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item label="Departamento" name="department"><Input /></Form.Item>

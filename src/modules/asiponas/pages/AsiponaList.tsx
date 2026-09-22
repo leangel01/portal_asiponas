@@ -192,7 +192,10 @@ export const AsiponaList: React.FC = () => {
       <Modal
         title={editingId ? "Editar ASIPONA" : "Registrar ASIPONA"}
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          form.resetFields();
+          setModalOpen(false);
+        }}
         onOk={() => void form.submit()}
         confirmLoading={saving}
         okText={editingId ? "Guardar cambios" : "Registrar"}

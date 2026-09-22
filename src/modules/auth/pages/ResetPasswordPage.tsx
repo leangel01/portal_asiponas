@@ -86,6 +86,7 @@ export const ResetPasswordPage: React.FC = () => {
 
     await supabaseClient.auth.signOut();
     message.success("Contraseña actualizada correctamente");
+    form.resetFields();
     navigate("/login", { replace: true });
   };
 
