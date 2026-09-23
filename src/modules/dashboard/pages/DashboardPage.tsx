@@ -19,6 +19,7 @@ import {
   FileTextOutlined,
   FundOutlined,
   GlobalOutlined,
+  HistoryOutlined,
   LineChartOutlined,
   ReadOutlined,
   TeamOutlined,
@@ -32,6 +33,7 @@ import {
   ContractsModule,
   DirectoryModule,
   GoalsModule,
+  HistoricalTimelineModule,
   InvestmentsModule,
   LocationsModule,
   OverviewModule,
@@ -45,6 +47,7 @@ import type {
   DirectoryContact,
   Goal,
   Investment,
+  HistoricalTimeline,
   Location,
   News,
 } from "../components";
@@ -66,6 +69,7 @@ type DashboardData = {
   goals: Goal[];
   contracts: Contract[];
   investments: Investment[];
+  timeline: HistoricalTimeline[];
 };
 const emptyData: DashboardData = {
   asiponas: [],
@@ -77,6 +81,7 @@ const emptyData: DashboardData = {
   goals: [],
   contracts: [],
   investments: [],
+  timeline: [],
 };
 
 export const DashboardPage: React.FC = () => {
@@ -95,6 +100,18 @@ export const DashboardPage: React.FC = () => {
   });
   const { data: canDeleteBudgetItem } = useCan({
     resource: "budget_items",
+    action: "delete",
+  });
+  const { data: canCreateTimeline } = useCan({
+    resource: "historical_timeline",
+    action: "create",
+  });
+  const { data: canEditTimeline } = useCan({
+    resource: "historical_timeline",
+    action: "edit",
+  });
+  const { data: canDeleteTimeline } = useCan({
+    resource: "historical_timeline",
     action: "delete",
   });
   const { data: canEdit } = useCan({ resource: "dashboard", action: "edit" });
@@ -170,6 +187,13 @@ export const DashboardPage: React.FC = () => {
               .select("*")
               .in("asipona_id", ids)
         ).order("created_at", { ascending: false }),
+        (isAdmin
+          ? supabaseClient.from("historical_timeline").select("*")
+          : supabaseClient
+              .from("historical_timeline")
+              .select("*")
+              .in("asipona_id", ids)
+        ).order("year", { ascending: false }),
       ]);
       const budgets = queries[3];
       const accessibleAsiponaIds = (queries[0].data || []).map(
@@ -192,6 +216,7 @@ export const DashboardPage: React.FC = () => {
         goals,
         contracts,
         investments,
+        timeline,
       ] = queries;
       const next = {
         asiponas: asiponas.data || [],
@@ -203,6 +228,7 @@ export const DashboardPage: React.FC = () => {
         goals: goals.data || [],
         contracts: contracts.data || [],
         investments: investments.data || [],
+        timeline: timeline.data || [],
       };
       setData(next);
       setSelectedId((previous) =>
@@ -230,6 +256,7 @@ export const DashboardPage: React.FC = () => {
       goals: belongs(data.goals),
       contracts: belongs(data.contracts),
       investments: belongs(data.investments),
+      timeline: belongs(data.timeline),
       budget: budgets[0],
       budgets,
       budgetItems: data.budgetItems.filter(
@@ -266,6 +293,7 @@ export const DashboardPage: React.FC = () => {
     ["Metas", <LineChartOutlined />],
     ["Contratos", <FileTextOutlined />],
     ["Inversiones", <ToolOutlined />],
+    ["Línea de tiempo", <HistoryOutlined />],
   ] as const;
   const openCrud = (
     resource: CrudResource,
@@ -366,7 +394,10 @@ export const DashboardPage: React.FC = () => {
             <Text type="secondary">
               Gestión de {activeModule.toLowerCase()}
             </Text>
-            {canCreate?.can === true && resourceByModule[activeModule] && (
+            {(activeModule === "Línea de tiempo"
+              ? canCreateTimeline?.can === true
+              : canCreate?.can === true) &&
+              resourceByModule[activeModule] && (
               <Button
                 type="primary"
                 size="small"
@@ -495,6 +526,15 @@ export const DashboardPage: React.FC = () => {
             {...permissions}
             onEdit={(item) => openCrud("investment_projects", item)}
             onDelete={(id) => void deleteCrud("investment_projects", id)}
+          />
+        )}
+        {activeModule === "Línea de tiempo" && (
+          <HistoricalTimelineModule
+            items={scoped.timeline}
+            canEdit={canEditTimeline?.can === true}
+            canDelete={canDeleteTimeline?.can === true}
+            onEdit={(item) => openCrud("historical_timeline", item)}
+            onDelete={(id) => void deleteCrud("historical_timeline", id)}
           />
         )}
         <Modal

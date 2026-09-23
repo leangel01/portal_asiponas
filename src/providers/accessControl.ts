@@ -8,6 +8,7 @@ const rolePermissions: Record<string, Record<string, string[]>> = {
     asiponas: ["list", "create", "edit", "delete", "show"],
     contracts: ["list", "create", "edit", "delete", "show"],
     budget_items: ["list", "create", "edit", "delete", "show"],
+    historical_timeline: ["list", "create", "edit", "delete", "show"],
     dashboard: ["list", "show", "create", "edit", "delete"],
   },
   admin_asipona: {
@@ -15,6 +16,7 @@ const rolePermissions: Record<string, Record<string, string[]>> = {
     asiponas: ["list", "show"],
     contracts: ["list", "create", "edit", "delete", "show"],
     budget_items: ["list", "create", "edit", "delete", "show"],
+    historical_timeline: ["list", "create", "edit", "delete", "show"],
     dashboard: ["list", "show", "create", "edit", "delete"],
   },
   viewer: {

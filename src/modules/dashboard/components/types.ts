@@ -10,6 +10,7 @@ export type News = Tables["news"]["Row"];
 export type Goal = Tables["goals"]["Row"];
 export type Contract = Tables["contracts"]["Row"];
 export type Investment = Tables["investment_projects"]["Row"];
+export type HistoricalTimeline = Tables["historical_timeline"]["Row"];
 
 export type ScopedDashboardData = {
   contacts: DirectoryContact[];
@@ -21,4 +22,5 @@ export type ScopedDashboardData = {
   budget?: Budget;
   budgets: Budget[];
   budgetItems: BudgetItem[];
+  timeline: HistoricalTimeline[];
 };

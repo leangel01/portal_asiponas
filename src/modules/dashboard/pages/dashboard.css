@@ -81,6 +81,28 @@
 .budget-total-row > td { font-weight: 600; background: #fff8e7 !important; }
 .module-card .ant-table-container { overflow-x: auto; }
 
+.historical-timeline { padding: 4px 0 18px; }
+.historical-timeline-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 0 0 26px; padding-bottom: 14px; border-bottom: 1px solid #dce8e7; }
+.historical-timeline-heading h4 { margin: 0 0 3px; color: #17324d; }
+.historical-timeline-filter { min-width: 170px; }
+.historical-timeline-track { position: relative; padding: 4px 0 18px; }
+.historical-timeline-track::before { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; content: ""; background: linear-gradient(#0f766e, #9b2247 70%, transparent); transform: translateX(-50%); }
+.historical-timeline-year { position: relative; margin: 0 0 34px; }
+.historical-timeline-year-label { position: relative; z-index: 1; width: fit-content; margin: 0 auto 26px; padding: 7px 18px; color: #fff; font-size: 18px; font-weight: 800; letter-spacing: .04em; border: 4px solid #edf5f3; border-radius: 999px; background: #123b51; box-shadow: 0 5px 14px rgba(18, 59, 81, .18); animation: historical-year-in .75s cubic-bezier(.22, 1, .36, 1) both; }
+.historical-timeline-date-group { position: relative; margin: 0 0 24px; }
+.historical-timeline-date { position: relative; z-index: 2; width: max-content; max-width: calc(100% - 30px); margin: 0 auto 12px; padding: 4px 12px; color: #9b2247; font-size: 12px; font-weight: 800; text-transform: capitalize; border: 1px solid #efc8d4; border-radius: 999px; background: #fff; box-shadow: 0 3px 9px rgba(23, 50, 77, .08); }
+.historical-timeline-date-items { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 0; }
+.historical-timeline-entry { width: calc(50% - 28px); opacity: 0; transform: translateY(12px); transition: opacity .55s ease, transform .55s ease; }
+.historical-timeline-entry-left { margin-right: auto; padding-right: 10px; text-align: right; transform: translateX(-18px) translateY(12px); }
+.historical-timeline-entry-right { margin-left: auto; padding-left: 10px; transform: translateX(18px) translateY(12px); }
+.historical-timeline-entry.is-visible { opacity: 1; transform: translateX(0) translateY(0); }
+.historical-timeline-card { padding: 15px 17px; text-align: justify; border: 1px solid #dce8e7; border-radius: 6px; background: rgba(248, 252, 251, .92); box-shadow: 0 7px 16px rgba(23, 50, 77, .07); }
+.historical-timeline-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+.historical-timeline-card-header .ant-space { flex-wrap: wrap; justify-content: flex-end; }
+.historical-timeline-card h5 { margin: 0 0 7px; color: #17324d; text-align: start; }
+.historical-timeline-card p { margin: 0; color: #526a6f; font-size: 13px; line-height: 1.65; }
+@keyframes historical-year-in { from { opacity: 0; transform: scale(.75) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
 [data-theme="dark"] .asipona-dashboard { color: #e6efed; background: linear-gradient(135deg, #101718 0%, #142321 100%); }
 [data-theme="dark"] .identity-strip, [data-theme="dark"] .metric-tile, [data-theme="dark"] .module-card { background: rgba(23, 35, 34, .92); border-color: #2a4540; }
 [data-theme="dark"] .metric-value, [data-theme="dark"] .module-card .ant-list-item-meta-title { color: #f2f7f5; }
@@ -124,6 +146,13 @@
 [data-theme="dark"] .budget-progress-value { color: #b2c8c1; }
 [data-theme="dark"] .budget-items-heading { border-bottom-color: #2a4540; }
 [data-theme="dark"] .budget-total-row > td { background: #3b321d !important; }
+[data-theme="dark"] .historical-timeline-heading { border-bottom-color: #2a4540; }
+[data-theme="dark"] .historical-timeline-heading h4 { color: #f2f7f5; }
+[data-theme="dark"] .historical-timeline-year-label { border-color: #203633; background: #0f766e; }
+[data-theme="dark"] .historical-timeline-date { border-color: #744052; background: #172322; }
+[data-theme="dark"] .historical-timeline-card { border-color: #36564f; background: #1b2b2a; box-shadow: 0 7px 16px rgba(0, 0, 0, .18); }
+[data-theme="dark"] .historical-timeline-card h5 { color: #f2f7f5; }
+[data-theme="dark"] .historical-timeline-card p { color: #c0d4ce; }
 [data-theme="dark"] .ant-select-dropdown { background: #172322; }
 [data-theme="dark"] .ant-select-item { color: #d7e7e2; }
 [data-theme="dark"] .ant-select-item-option-active { background: #23453e; }
@@ -151,4 +180,15 @@
   .budget-history-legend { justify-content: flex-start; }
   .budget-progress-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
   .budget-items-heading { align-items: flex-start; flex-direction: column; }
+  .historical-timeline-heading { align-items: stretch; flex-direction: column; }
+  .historical-timeline-filter { width: 100%; }
+  .historical-timeline-track::before { left: 12px; transform: none; }
+  .historical-timeline-year-label { margin-left: 0; padding: 6px 14px; font-size: 16px; }
+  .historical-timeline-date { margin-left: 0; }
+  .historical-timeline-date-items { display: block; padding-left: 27px; }
+  .historical-timeline-entry,
+  .historical-timeline-entry-left,
+  .historical-timeline-entry-right { width: 100%; margin: 0 0 12px; padding: 0; text-align: left; transform: translateY(12px); }
+  .historical-timeline-entry.is-visible { transform: translateY(0); }
+  .historical-timeline-card-header .ant-space { justify-content: flex-start; }
 }

@@ -6,7 +6,8 @@ export type CrudResource =
   | "goals"
   | "contracts"
   | "investment_projects"
-  | "budget_items";
+  | "budget_items"
+  | "historical_timeline";
 
 export type CrudField = {
   name: string;
@@ -23,6 +24,7 @@ export const resourceByModule: Record<string, CrudResource | undefined> = {
   Metas: "goals",
   Contratos: "contracts",
   Inversiones: "investment_projects",
+  "Línea de tiempo": "historical_timeline",
 };
 
 export const fieldsByResource: Record<CrudResource, CrudField[]> = {
@@ -130,5 +132,17 @@ export const fieldsByResource: Record<CrudResource, CrudField[]> = {
     { name: "aproved", label: "Aprobado", type: "number" },
     { name: "modified", label: "Modificado", type: "number" },
     { name: "spent", label: "Ejercido", type: "number" },
+  ],
+  historical_timeline: [
+    { name: "title", label: "Título", required: true },
+    { name: "description", label: "Descripción", required: true },
+    {
+      name: "category",
+      label: "Categoría",
+      type: "select",
+      required: true,
+      options: ["Fundacional", "Estructura Legal", "Infraestructura", "Concesiones", "Transformación", "Estrategia"],
+    },
+    { name: "year", label: "Fecha", type: "date", required: true },
   ],
 };

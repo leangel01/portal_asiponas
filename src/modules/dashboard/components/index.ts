@@ -6,5 +6,6 @@ export { ContractsModule } from "./ContractsModule";
 export { InvestmentsModule } from "./InvestmentsModule";
 export { OverviewModule } from "./OverviewModule";
 export { BudgetModule } from "./BudgetModule";
+export { HistoricalTimelineModule } from "./HistoricalTimelineModule";
 export { EmptyState, RowActions, bounded, money, moneyMillions, statusColor } from "./shared";
 export type * from "./types";
