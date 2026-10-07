@@ -13,8 +13,11 @@ export type CrudField = {
   name: string;
   label: string;
   type?: "number" | "select" | "date";
-  options?: string[];
+  options?: Array<string | number>;
+  optionLabels?: Record<string, string>;
   required?: boolean;
+  min?: number;
+  max?: number;
 };
 
 export const resourceByModule: Record<string, CrudResource | undefined> = {
@@ -96,7 +99,19 @@ export const fieldsByResource: Record<CrudResource, CrudField[]> = {
     { name: "status", label: "Estado", type: "select", options: ["Planeación", "Licitación", "En Ejecución", "Completado", "Suspendido"] },
   ],
   budget_items: [
-    { name: "program_name", label: "Nombre del programa", required: true },
+    {
+      name: "category",
+      label: "Categoría",
+      type: "select",
+      required: true,
+      options: ["programatica", "economica", "objetoGasto"],
+      optionLabels: {
+        programatica: "Programática",
+        economica: "Económica",
+        objetoGasto: "Objeto del gasto",
+      },
+    },
+    { name: "concep", label: "Concepto", required: true },
     {
       name: "type",
       label: "Tipo",
@@ -129,6 +144,19 @@ export const fieldsByResource: Record<CrudResource, CrudField[]> = {
       ],
     },
     { name: "anio", label: "Año", type: "number", required: true },
+    {
+      name: "quarter_year",
+      label: "Trimestre",
+      type: "select",
+      required: true,
+      options: [1, 2, 3, 4],
+      optionLabels: {
+        "1": "Trimestre 1",
+        "2": "Trimestre 2",
+        "3": "Trimestre 3",
+        "4": "Trimestre 4",
+      },
+    },
     { name: "aproved", label: "Aprobado", type: "number" },
     { name: "modified", label: "Modificado", type: "number" },
     { name: "spent", label: "Ejercido", type: "number" },

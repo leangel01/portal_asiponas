@@ -16,16 +16,24 @@ export const authProvider: AuthProvider = {
     if (error) {
       return {
         success: false,
-        error: { message: "Error al iniciar sesión", name: error.message },
+        error: {
+          message: "Correo o contraseña incorrectos.",
+          name: "Error de inicio de sesión",
+        },
       };
     }
 
     if (data?.user) {
-      const { data: mustChangePassword } = await multiAsiponaRpc.rpc("get_must_change_password");
-      return { success: true, redirectTo: mustChangePassword === true ? "/change-password" : "/" };
+      return { success: true, redirectTo: "/" };
     }
 
-    return { success: false, error: { message: "Credenciales inválidas", name: "AuthError" } };
+    return {
+      success: false,
+      error: {
+        message: "Correo o contraseña incorrectos.",
+        name: "Error de inicio de sesión",
+      },
+    };
   },
 
   logout: async () => {

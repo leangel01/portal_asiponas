@@ -10,6 +10,7 @@ import {
   Modal,
   Select,
   Space,
+  Spin,
   Typography,
   message,
 } from "antd";
@@ -20,6 +21,7 @@ import {
   FundOutlined,
   GlobalOutlined,
   HistoryOutlined,
+  LoadingOutlined,
   LineChartOutlined,
   ReadOutlined,
   TeamOutlined,
@@ -64,7 +66,6 @@ type DashboardData = {
   contacts: DirectoryContact[];
   locations: Location[];
   budgets: Budget[];
-  budgetItems: BudgetItem[];
   news: News[];
   goals: Goal[];
   contracts: Contract[];
@@ -76,12 +77,35 @@ const emptyData: DashboardData = {
   contacts: [],
   locations: [],
   budgets: [],
-  budgetItems: [],
   news: [],
   goals: [],
   contracts: [],
   investments: [],
   timeline: [],
+};
+
+const loadAllRows = async <T,>(
+  fetchPage: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{
+    data: T[] | null;
+    error: { message: string } | null;
+  }>,
+) => {
+  const pageSize = 1000;
+  const records: T[] = [];
+  let offset = 0;
+  while (true) {
+    const { data: page, error } = await fetchPage(
+      offset,
+      offset + pageSize - 1,
+    );
+    if (error) throw new Error(error.message);
+    records.push(...(page || []));
+    if (!page || page.length < pageSize) return records;
+    offset += pageSize;
+  }
 };
 
 export const DashboardPage: React.FC = () => {
@@ -120,6 +144,8 @@ export const DashboardPage: React.FC = () => {
     action: "delete",
   });
   const [data, setData] = useState<DashboardData>(emptyData);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [selectedDataLoading, setSelectedDataLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
   const [activeModule, setActiveModule] = useState("Resumen");
   const [loading, setLoading] = useState(true);
@@ -131,6 +157,7 @@ export const DashboardPage: React.FC = () => {
   const [crudSaving, setCrudSaving] = useState(false);
   const [crudForm] = Form.useForm();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [asiponaListRefreshKey, setAsiponaListRefreshKey] = useState(0);
   const [newsDateRange, setNewsDateRange] = useState<[string, string]>();
   const [newsDateOrder, setNewsDateOrder] = useState<"ascend" | "descend">(
     "descend",
@@ -139,6 +166,7 @@ export const DashboardPage: React.FC = () => {
   const [newsSentiment, setNewsSentiment] = useState<string>();
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       if (identity === undefined) return;
       if (!identity) {
@@ -146,100 +174,170 @@ export const DashboardPage: React.FC = () => {
         return;
       }
       setLoading(true);
-      const ids = identity.asipona_ids;
-      const isAdmin = identity.role === "admin_general";
-      const queries = await Promise.all([
-        (isAdmin
-          ? supabaseClient.from("asiponas").select("*").eq("is_active", true)
-          : supabaseClient.from("asiponas").select("*").in("id", ids)
-        ).order("name"),
-        (isAdmin
-          ? supabaseClient.from("directory_contacts").select("*")
-          : supabaseClient
-              .from("directory_contacts")
-              .select("*")
-              .in("asipona_id", ids)
-        ).order("display_order"),
-        (isAdmin
-          ? supabaseClient.from("locations").select("*")
-          : supabaseClient.from("locations").select("*").in("asipona_id", ids)
-        ).order("name"),
-        (isAdmin
-          ? supabaseClient.from("budgets").select("*")
-          : supabaseClient.from("budgets").select("*").in("asipona_id", ids)
-        ).order("fiscal_year", { ascending: false }),
-        (isAdmin
-          ? supabaseClient.from("news").select("*")
-          : supabaseClient.from("news").select("*").in("asipona_id", ids)
-        ).order("published_date", { ascending: false }),
-        (isAdmin
-          ? supabaseClient.from("goals").select("*")
-          : supabaseClient.from("goals").select("*").in("asipona_id", ids)
-        ).order("created_at", { ascending: false }),
-        (isAdmin
-          ? supabaseClient.from("contracts").select("*")
-          : supabaseClient.from("contracts").select("*").in("asipona_id", ids)
-        ).order("end_date"),
-        (isAdmin
-          ? supabaseClient.from("investment_projects").select("*")
-          : supabaseClient
-              .from("investment_projects")
-              .select("*")
-              .in("asipona_id", ids)
-        ).order("created_at", { ascending: false }),
-        (isAdmin
-          ? supabaseClient.from("historical_timeline").select("*")
-          : supabaseClient
-              .from("historical_timeline")
-              .select("*")
-              .in("asipona_id", ids)
-        ).order("year", { ascending: false }),
-      ]);
-      const budgets = queries[3];
-      const accessibleAsiponaIds = (queries[0].data || []).map(
-        (asipona) => asipona.id,
-      );
-      const budgetItems = accessibleAsiponaIds.length
-        ? await supabaseClient
-            .from("budget_items")
-            .select("*")
-            .in("asipona_id", accessibleAsiponaIds)
-        : { data: [], error: null };
-      if (queries.some((query) => query.error) || budgetItems.error)
-        setError("No fue posible cargar la información del portal.");
-      const [
-        asiponas,
-        contacts,
-        locations,
-        ,
-        news,
-        goals,
-        contracts,
-        investments,
-        timeline,
-      ] = queries;
-      const next = {
-        asiponas: asiponas.data || [],
-        contacts: contacts.data || [],
-        locations: locations.data || [],
-        budgets: budgets.data || [],
-        budgetItems: budgetItems.data || [],
-        news: news.data || [],
-        goals: goals.data || [],
-        contracts: contracts.data || [],
-        investments: investments.data || [],
-        timeline: timeline.data || [],
-      };
-      setData(next);
-      setSelectedId((previous) =>
-        next.asiponas.some((item) => item.id === previous)
-          ? previous
-          : next.asiponas[0]?.id,
-      );
-      setLoading(false);
+      setError(undefined);
+      try {
+        const isAdmin = identity.role === "admin_general";
+        const { data: asiponas, error: asiponasError } = await (
+          isAdmin
+            ? supabaseClient.from("asiponas").select("*").eq("is_active", true)
+            : supabaseClient
+                .from("asiponas")
+                .select("*")
+                .in("id", identity.asipona_ids)
+        ).order("name");
+        if (asiponasError) throw new Error(asiponasError.message);
+        if (cancelled) return;
+        const authorizedAsiponas = asiponas || [];
+        setData({ ...emptyData, asiponas: authorizedAsiponas });
+        setSelectedId((previous) =>
+          authorizedAsiponas.some((item) => item.id === previous)
+            ? previous
+            : authorizedAsiponas[0]?.id,
+        );
+      } catch {
+        if (!cancelled)
+          setError("No fue posible cargar la información del portal.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     void load();
-  }, [identity, refreshKey]);
+    return () => {
+      cancelled = true;
+    };
+  }, [identity, asiponaListRefreshKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSelectedData = async () => {
+      if (
+        !selectedId ||
+        !data.asiponas.some((asipona) => asipona.id === selectedId)
+      ) {
+        setSelectedDataLoading(false);
+        return;
+      }
+
+      setSelectedDataLoading(true);
+      try {
+        const [
+          contacts,
+          locations,
+          budgets,
+          news,
+          goals,
+          contracts,
+          investments,
+          timeline,
+          budgetItems,
+        ] = await Promise.all([
+          loadAllRows<DirectoryContact>((from, to) =>
+            supabaseClient
+              .from("directory_contacts")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("display_order")
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<Location>((from, to) =>
+            supabaseClient
+              .from("locations")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("name")
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<Budget>((from, to) =>
+            supabaseClient
+              .from("budgets")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("fiscal_year", { ascending: false })
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<News>((from, to) =>
+            supabaseClient
+              .from("news")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("published_date", { ascending: false })
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<Goal>((from, to) =>
+            supabaseClient
+              .from("goals")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("created_at", { ascending: false })
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<Contract>((from, to) =>
+            supabaseClient
+              .from("contracts")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("end_date")
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<Investment>((from, to) =>
+            supabaseClient
+              .from("investment_projects")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("created_at", { ascending: false })
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<HistoricalTimeline>((from, to) =>
+            supabaseClient
+              .from("historical_timeline")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("year", { ascending: false })
+              .order("id")
+              .range(from, to),
+          ),
+          loadAllRows<BudgetItem>((from, to) =>
+            supabaseClient
+              .from("budget_items")
+              .select("*")
+              .eq("asipona_id", selectedId)
+              .order("id", { ascending: true })
+              .range(from, to),
+          ),
+        ]);
+        if (cancelled) return;
+        setData((current) => ({
+          ...current,
+          contacts,
+          locations,
+          budgets,
+          news,
+          goals,
+          contracts,
+          investments,
+          timeline,
+        }));
+        setBudgetItems(budgetItems);
+        setError(undefined);
+      } catch {
+        if (!cancelled)
+          setError("No fue posible cargar la información de la ASIPONA.");
+      } finally {
+        if (!cancelled) setSelectedDataLoading(false);
+      }
+    };
+    void loadSelectedData();
+    return () => {
+      cancelled = true;
+    };
+  }, [data.asiponas, refreshKey, selectedId]);
 
   const current =
     data.asiponas.find((item) => item.id === selectedId) || data.asiponas[0];
@@ -259,11 +357,11 @@ export const DashboardPage: React.FC = () => {
       timeline: belongs(data.timeline),
       budget: budgets[0],
       budgets,
-      budgetItems: data.budgetItems.filter(
+      budgetItems: budgetItems.filter(
         (item) => item.asipona_id === current?.id,
       ),
     };
-  }, [current?.id, data]);
+  }, [budgetItems, current?.id, data]);
   const filteredNews = useMemo(() => {
     const [from, to] = newsDateRange || [];
     return [...scoped.news]
@@ -302,7 +400,10 @@ export const DashboardPage: React.FC = () => {
     setCrudResource(resource);
     setCrudRecord(record);
     crudForm.resetFields();
-    crudForm.setFieldsValue(record || {});
+    crudForm.setFieldsValue(
+      record ||
+        (resource === "budget_items" ? { category: "programatica" } : {}),
+    );
     setCrudOpen(true);
   };
   const deleteCrud = async (resource: CrudResource, id: string) => {
@@ -315,7 +416,9 @@ export const DashboardPage: React.FC = () => {
       return;
     }
     message.success("Elemento eliminado");
-    setRefreshKey((value) => value + 1);
+    if (resource === "asiponas")
+      setAsiponaListRefreshKey((value) => value + 1);
+    else setRefreshKey((value) => value + 1);
   };
   const saveCrud = async (values: Record<string, unknown>) => {
     if (!current?.id && crudResource !== "asiponas") return;
@@ -339,7 +442,9 @@ export const DashboardPage: React.FC = () => {
     crudForm.resetFields();
     setCrudRecord(undefined);
     setCrudOpen(false);
-    setRefreshKey((value) => value + 1);
+    if (crudResource === "asiponas")
+      setAsiponaListRefreshKey((value) => value + 1);
+    else setRefreshKey((value) => value + 1);
   };
 
   if (loading)
@@ -389,6 +494,29 @@ export const DashboardPage: React.FC = () => {
         ))}
       </div>
       <Card className="module-card" variant="borderless">
+        {selectedDataLoading && (
+          <div className="dashboard-data-loader" role="status" aria-live="polite">
+            <div className="dashboard-loader-panel">
+              <div className="dashboard-loader-emblem" aria-hidden="true">
+                <span className="dashboard-loader-orbit dashboard-loader-orbit-outer" />
+                <span className="dashboard-loader-orbit dashboard-loader-orbit-inner" />
+                <Spin
+                  indicator={<LoadingOutlined spin />}
+                  aria-label="Cargando información"
+                />
+              </div>
+              <div className="dashboard-loader-copy">
+                <Text strong>Cargando datos</Text>
+                <Text type="secondary">
+                  Consultando {current?.name || "la ASIPONA"}…
+                </Text>
+              </div>
+              <div className="dashboard-loader-track" aria-hidden="true">
+                <span />
+              </div>
+            </div>
+          </div>
+        )}
         {activeModule !== "Resumen" && activeModule !== "Presupuesto" && (
           <div className="module-actions">
             <Text type="secondary">
@@ -436,14 +564,15 @@ export const DashboardPage: React.FC = () => {
         )}
         {activeModule === "Presupuesto" && (
           <BudgetModule
-            budget={scoped.budget}
+            key={current?.id}
             budgets={scoped.budgets}
             items={scoped.budgetItems}
+            loading={selectedDataLoading}
             canEdit={canEditBudgetItem?.can === true}
             canDelete={canDeleteBudgetItem?.can === true}
             onAdd={
               canCreateBudgetItem?.can === true
-                ? () => openCrud("budget_items")
+                ? (category) => openCrud("budget_items", { category })
                 : undefined
             }
             onEdit={(item) => openCrud("budget_items", item)}
@@ -572,12 +701,17 @@ export const DashboardPage: React.FC = () => {
                 {field.type === "select" ? (
                   <Select
                     options={field.options?.map((option) => ({
-                      label: option,
+                      label:
+                        field.optionLabels?.[String(option)] ?? String(option),
                       value: option,
                     }))}
                   />
                 ) : field.type === "number" ? (
-                  <InputNumber style={{ width: "100%" }} min={0} />
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    min={field.min ?? 0}
+                    max={field.max}
+                  />
                 ) : (
                   <Input type={field.type === "date" ? "date" : "text"} />
                 )}

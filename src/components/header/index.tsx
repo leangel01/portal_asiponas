@@ -9,6 +9,7 @@ import {
   Switch,
   Typography,
 } from "antd";
+import { ExclamationCircleFilled } from "@ant-design/icons";
 import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ColorModeContext } from "../../contexts/color-mode";
@@ -69,6 +70,14 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
             : []),
         ]}
       />
+      <div
+        className="development-notice"
+        role="status"
+        title="La información presentada es preliminar y no debe considerarse la versión final."
+      >
+        <ExclamationCircleFilled aria-hidden="true" />
+        <span>Sitio en desarrollo · Información preliminar.</span>
+      </div>
       <Space className="asipona-user-tools">
         <Switch
           checkedChildren="☾"
