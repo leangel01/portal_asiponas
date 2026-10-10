@@ -283,7 +283,8 @@ export const DashboardPage: React.FC = () => {
               .eq("asipona_id", selectedId)
               .order("end_date")
               .order("id")
-              .range(from, to),
+              .range(from, to)
+              .returns<Contract[]>(),
           ),
           loadAllRows<Investment>((from, to) =>
             supabaseClient
@@ -400,10 +401,21 @@ export const DashboardPage: React.FC = () => {
     setCrudResource(resource);
     setCrudRecord(record);
     crudForm.resetFields();
-    crudForm.setFieldsValue(
-      record ||
-        (resource === "budget_items" ? { category: "programatica" } : {}),
-    );
+    const initialValues: Record<string, unknown> = record ? { ...record } : {};
+    if (resource === "contracts" && record) {
+      for (const field of [
+        "published_date",
+        "effective_date",
+        "start_date",
+        "end_date",
+      ]) {
+        const value = initialValues[field];
+        if (typeof value === "string") initialValues[field] = value.slice(0, 10);
+      }
+    }
+    if (!record && resource === "budget_items")
+      initialValues.category = "programatica";
+    crudForm.setFieldsValue(initialValues);
     setCrudOpen(true);
   };
   const deleteCrud = async (resource: CrudResource, id: string) => {

@@ -8,7 +8,26 @@ export type Budget = Tables["budgets"]["Row"];
 export type BudgetItem = Tables["budget_items"]["Row"];
 export type News = Tables["news"]["Row"];
 export type Goal = Tables["goals"]["Row"];
-export type Contract = Tables["contracts"]["Row"];
+export type Contract = {
+  id: string;
+  asipona_id: string;
+  code: string;
+  type: string;
+  start_date: string | null;
+  end_date: string | null;
+  amount: number | null;
+  status: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  fiscal_year: number;
+  tax_amount: number | null;
+  currency: string | null;
+  effective_date: string | null;
+  published_date: string | null;
+  contract_type: string;
+  url: string;
+};
 export type Investment = Tables["investment_projects"]["Row"];
 export type HistoricalTimeline = Tables["historical_timeline"]["Row"];
 
