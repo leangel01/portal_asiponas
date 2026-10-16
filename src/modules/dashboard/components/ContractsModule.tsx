@@ -5,6 +5,7 @@ import {
   Col,
   Descriptions,
   Empty,
+  Input,
   Row,
   Select,
   Statistic,
@@ -13,7 +14,11 @@ import {
   Tooltip as AntTooltip,
   Typography,
 } from "antd";
-import { ArrowLeftOutlined, LinkOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  LinkOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import {
   Bar,
   BarChart,
@@ -284,6 +289,49 @@ const contractValidity = (
   return "unknown";
 };
 
+const matchesTableSearch = (
+  item: Contract,
+  search: string,
+  todayKey: string,
+) => {
+  const terms = normalize(search).split(/\s+/).filter(Boolean);
+  if (!terms.length) return true;
+
+  const validity = contractValidity(item, todayKey);
+  const validityLabel =
+    validity === "active"
+      ? "vigente"
+      : validity === "finalized"
+        ? "concluido"
+        : validity === "upcoming"
+          ? "por iniciar"
+          : "sin clasificar";
+  const searchableText = normalize(
+    [
+      item.fiscal_year,
+      item.code,
+      item.status,
+      item.type,
+      item.description,
+      item.published_date,
+      formatDate(item.published_date),
+      item.contract_type,
+      item.start_date,
+      formatDate(item.start_date),
+      item.end_date,
+      formatDate(item.end_date),
+      validityLabel,
+      contractAmountWithTax(item),
+      formatCurrency(contractAmountWithTax(item), item.currency),
+      item.currency,
+    ]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" "),
+  );
+
+  return terms.every((term) => searchableText.includes(term));
+};
+
 export const ContractsModule: React.FC<{
   items: Contract[];
   canEdit?: boolean;
@@ -295,6 +343,7 @@ export const ContractsModule: React.FC<{
   const [validityFilter, setValidityFilter] = useState<
     "active" | "finalized"
   >();
+  const [tableSearch, setTableSearch] = useState("");
   const [selected, setSelected] = useState<Contract>();
 
   const filteredItems = useMemo(
@@ -373,11 +422,12 @@ export const ContractsModule: React.FC<{
   const activeContracts = filteredItems.filter(
     (item) => contractValidity(item, todayKey) === "active",
   ).length;
-  const tableItems = validityFilter
-    ? filteredItems.filter(
-        (item) => contractValidity(item, todayKey) === validityFilter,
-      )
-    : filteredItems;
+  const tableItems = filteredItems.filter(
+    (item) =>
+      (!validityFilter ||
+        contractValidity(item, todayKey) === validityFilter) &&
+      matchesTableSearch(item, tableSearch, todayKey),
+  );
 
   const processTypeCounts = countByCategory(
     filteredItems,
@@ -819,7 +869,16 @@ export const ContractsModule: React.FC<{
         <div className="contracts-table-heading">
           <Title level={5}>Procedimientos de contratación</Title>
           <div className="contracts-table-controls">
-            <Text type="secondary">{tableItems.length} resultados</Text>
+            <Input
+              allowClear
+              aria-label="Buscar contratos en la tabla"
+              className="contracts-table-search"
+              placeholder="Buscar en la tabla"
+              prefix={<SearchOutlined />}
+              value={tableSearch}
+              onChange={(event) => setTableSearch(event.target.value)}
+            />
+            
             <Select
               allowClear
               aria-label="Filtrar contratos por vigencia"
@@ -833,6 +892,7 @@ export const ContractsModule: React.FC<{
                 setValidityFilter(value)
               }
             />
+            <Text type="secondary">{tableItems.length} resultados</Text>
           </div>
         </div>
         <Table
@@ -842,25 +902,83 @@ export const ContractsModule: React.FC<{
           scroll={{ x: 1180 }}
           pagination={{ pageSize: 10, showSizeChanger: false }}
           columns={[
+            { 
+              title: "Año fiscal",
+              dataIndex: "fiscal_year",
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
+              width: 52
+            },
             {
               title: "Clave",
               dataIndex: "code",
+              align: "center",
               width: 125,
               render: (value: string) => (
                 <span className="contracts-hyphenated-cell">{value}</span>
               ),
             },
             {
-              title: "Estatus",
+              title: "Estatus del procedimiento",
               dataIndex: "status",
-              width: 115,
+              align: "center",
+              width: 103,
               render: (value: string) => (
                 <Tag color={statusColor(value)}>{value}</Tag>
               ),
             },
             {
-              title: "Vigencia",
-              width: 125,
+              title: "Tipo",
+              dataIndex: "type",
+              align: "center",
+              width: 115,
+              render: (value: string) => (
+                <span className="contracts-hyphenated-cell">{value}</span>
+              ),
+            },
+            {
+              title: "Descripción",
+              dataIndex: "description",
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
+              width: 245,
+              render: (value: string | null) => (
+                <AntTooltip title={value || "—"}>
+                  <span className="contracts-description-cell contracts-hyphenated-cell">
+                    {value || "—"}
+                  </span>
+                </AntTooltip>
+              ),
+            },
+            
+            {
+              title: "Fecha de publicación",
+              dataIndex: "published_date",
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
+              width: 120,
+              render: dateColumn,
+            },
+            {
+              title: "Tipo de contrato",
+              dataIndex: "contract_type",
+              align: "center",
+              width: 115,
+              render: (value: string) => (
+                <span className="contracts-hyphenated-cell">{value}</span>
+              ),
+            },
+            
+            {
+              title: "Estus del contrato",
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
+              align: "center",
+              width: 100,
               render: (_: unknown, item: Contract) => {
                 const validity = contractValidity(item, todayKey);
                 if (validity === "active") return <Tag color="green">Vigente</Tag>;
@@ -872,49 +990,12 @@ export const ContractsModule: React.FC<{
               },
             },
             {
-              title: "Tipo",
-              dataIndex: "type",
-              width: 155,
-              render: (value: string) => (
-                <span className="contracts-hyphenated-cell">{value}</span>
-              ),
-            },
-            {
-              title: "Descripción",
-              dataIndex: "description",
-              width: 205,
-              render: (value: string | null) => (
-                <AntTooltip title={value || "—"}>
-                  <span className="contracts-description-cell contracts-hyphenated-cell">
-                    {value || "—"}
-                  </span>
-                </AntTooltip>
-              ),
-            },
-            { title: "Año fiscal", dataIndex: "fiscal_year", width: 82 },
-            {
-              title: "Fecha de publicación",
-              dataIndex: "published_date",
-              width: 132,
-              render: dateColumn,
-            },
-            {
-              title: "Fecha de fallo",
-              dataIndex: "effective_date",
-              width: 125,
-              render: dateColumn,
-            },
-            {
-              title: "Tipo de contrato",
-              dataIndex: "contract_type",
-              width: 145,
-              render: (value: string) => (
-                <span className="contracts-hyphenated-cell">{value}</span>
-              ),
-            },
-            {
               title: "Monto con IVA",
-              width: 155,
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
+              align: "right",
+              width: 105,
               sorter: (left: Contract, right: Contract) =>
                 contractAmountWithTax(left) - contractAmountWithTax(right),
               sortDirections: ["ascend", "descend"],
@@ -923,6 +1004,9 @@ export const ContractsModule: React.FC<{
             },
             {
               title: "Acciones",
+              onHeaderCell: () => ({
+                style: { textAlign: "center" }, // Centers only the header title
+              }),
               width: 116,
               render: (_: unknown, item: Contract) => (
                 <div className="contracts-row-actions">
