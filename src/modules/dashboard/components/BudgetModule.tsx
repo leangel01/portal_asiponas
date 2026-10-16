@@ -429,6 +429,7 @@ export const BudgetModule: React.FC<{
         </Button>
       </Space>
       <Table<BudgetItem>
+        className="budget-items-table"
         rowKey="id"
         dataSource={filteredItems}
         loading={loading}
@@ -575,7 +576,7 @@ export const BudgetModule: React.FC<{
         }}
         summary={() => (
           <Table.Summary fixed>
-            <Table.Summary.Row>
+            <Table.Summary.Row className="budget-total-row">
               <Table.Summary.Cell index={0} colSpan={3 + Number(showConceptColumn)}>
                 <Text strong>Total</Text>
               </Table.Summary.Cell>

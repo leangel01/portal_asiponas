@@ -38,6 +38,7 @@ type ContractFilters = {
   contract_type?: string[];
 };
 type FilterKey = keyof ContractFilters;
+type ContractValidity = "active" | "finalized" | "upcoming" | "unknown";
 type Series = { key: string; label: string; color: string };
 
 const palette = [
@@ -58,8 +59,7 @@ const palette = [
 const amountOf = (value: number | null | undefined) =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
-const contractTotal = (item: Contract) =>
-  amountOf(item.amount) + amountOf(item.tax_amount);
+const contractAmountWithTax = (item: Contract) => amountOf(item.tax_amount);
 
 const normalize = (value: string | null | undefined) =>
   (value ?? "")
@@ -191,7 +191,7 @@ const moneyByCategory = (
     const key = currencyKeys.get(currencyCode(item));
     if (!key) return;
     const row = rows.get(category) ?? { name: category };
-    row[key] = Number(row[key] ?? 0) + contractTotal(item);
+    row[key] = Number(row[key] ?? 0) + contractAmountWithTax(item);
     rows.set(category, row);
   });
   return {
@@ -270,6 +270,20 @@ const dateKey = (value: string | null | undefined) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
+const contractValidity = (
+  item: Contract,
+  todayKey: string,
+): ContractValidity => {
+  const startDate = dateKey(item.start_date);
+  const endDate = dateKey(item.end_date);
+  if (endDate && endDate < todayKey) return "finalized";
+  if (startDate && endDate && startDate <= todayKey && endDate >= todayKey) {
+    return "active";
+  }
+  if (startDate && startDate > todayKey) return "upcoming";
+  return "unknown";
+};
+
 export const ContractsModule: React.FC<{
   items: Contract[];
   canEdit?: boolean;
@@ -278,6 +292,9 @@ export const ContractsModule: React.FC<{
   onDelete?: (id: string) => void;
 }> = ({ items, canEdit, canDelete, onEdit, onDelete }) => {
   const [filters, setFilters] = useState<ContractFilters>({});
+  const [validityFilter, setValidityFilter] = useState<
+    "active" | "finalized"
+  >();
   const [selected, setSelected] = useState<Contract>();
 
   const filteredItems = useMemo(
@@ -339,7 +356,10 @@ export const ContractsModule: React.FC<{
     const totals = new Map<string, number>();
     awardedItems.forEach((item) => {
       const currency = currencyCode(item);
-      totals.set(currency, (totals.get(currency) ?? 0) + contractTotal(item));
+      totals.set(
+        currency,
+        (totals.get(currency) ?? 0) + contractAmountWithTax(item),
+      );
     });
     return [...totals].sort(([left], [right]) =>
       left.localeCompare(right, "es"),
@@ -347,14 +367,17 @@ export const ContractsModule: React.FC<{
   }, [awardedItems]);
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  const finalizedContracts = filteredItems.filter((item) => {
-    const endDate = dateKey(item.end_date);
-    return endDate !== undefined && endDate < todayKey;
-  }).length;
-  const activeContracts = filteredItems.filter((item) => {
-    const endDate = dateKey(item.end_date);
-    return endDate !== undefined && endDate > todayKey;
-  }).length;
+  const finalizedContracts = filteredItems.filter(
+    (item) => contractValidity(item, todayKey) === "finalized",
+  ).length;
+  const activeContracts = filteredItems.filter(
+    (item) => contractValidity(item, todayKey) === "active",
+  ).length;
+  const tableItems = validityFilter
+    ? filteredItems.filter(
+        (item) => contractValidity(item, todayKey) === validityFilter,
+      )
+    : filteredItems;
 
   const processTypeCounts = countByCategory(
     filteredItems,
@@ -483,7 +506,7 @@ export const ContractsModule: React.FC<{
               </Col>
               <Col xs={24} sm={8}>
                 <Card size="small" className="contracts-detail-amount">
-                  <Text type="secondary">Monto</Text>
+                  <Text type="secondary">Monto sin IVA</Text>
                   <Text strong>
                     {formatCurrency(selected.amount, selected.currency)}
                   </Text>
@@ -491,7 +514,7 @@ export const ContractsModule: React.FC<{
               </Col>
               <Col xs={24} sm={8}>
                 <Card size="small" className="contracts-detail-amount">
-                  <Text type="secondary">Impuestos</Text>
+                  <Text type="secondary">Monto con IVA</Text>
                   <Text strong>
                     {formatCurrency(selected.tax_amount, selected.currency)}
                   </Text>
@@ -591,7 +614,9 @@ export const ContractsModule: React.FC<{
         <Col xs={24} sm={12} xl={6}>
           <Card className="contracts-stat-card">
             <div className="contracts-stat-card-heading">
-              <Text className="contracts-total-title">Monto adjudicado</Text>
+              <Text className="contracts-total-title">
+                Monto adjudicado con IVA
+              </Text>
               <Text className="contracts-card-period">{cardPeriod}</Text>
             </div>
             {awardedByCurrency.length ? (
@@ -774,7 +799,7 @@ export const ContractsModule: React.FC<{
           </Col>
           <Col xs={24} xl={12}>
             <MoneyByCategoryChart
-              title="Montos adjudicados por tipo de contrato"
+              title="Montos adjudicados con IVA por tipo de contrato"
               period={chartPeriod}
               data={awardedByContractType.rows}
               series={awardedByContractType.series}
@@ -782,7 +807,7 @@ export const ContractsModule: React.FC<{
           </Col>
           <Col xs={24}>
             <MoneyByCategoryChart
-              title="Montos adjudicados por tipo de procedimiento"
+              title="Montos adjudicados con IVA por tipo de procedimiento"
               period={chartPeriod}
               data={awardedByProcessType.rows}
               series={awardedByProcessType.series}
@@ -791,13 +816,28 @@ export const ContractsModule: React.FC<{
       </Row>
 
       <section className="contracts-table-section" lang="es">
-        <div className="contracts-chart-heading">
+        <div className="contracts-table-heading">
           <Title level={5}>Procedimientos de contratación</Title>
-          <Text type="secondary">{filteredItems.length} resultados</Text>
+          <div className="contracts-table-controls">
+            <Text type="secondary">{tableItems.length} resultados</Text>
+            <Select
+              allowClear
+              aria-label="Filtrar contratos por vigencia"
+              placeholder="Todas las vigencias"
+              value={validityFilter}
+              options={[
+                { label: "Vigentes", value: "active" },
+                { label: "Concluidos", value: "finalized" },
+              ]}
+              onChange={(value: "active" | "finalized" | undefined) =>
+                setValidityFilter(value)
+              }
+            />
+          </div>
         </div>
         <Table
           rowKey="id"
-          dataSource={filteredItems}
+          dataSource={tableItems}
           tableLayout="fixed"
           scroll={{ x: 1180 }}
           pagination={{ pageSize: 10, showSizeChanger: false }}
@@ -817,6 +857,19 @@ export const ContractsModule: React.FC<{
               render: (value: string) => (
                 <Tag color={statusColor(value)}>{value}</Tag>
               ),
+            },
+            {
+              title: "Vigencia",
+              width: 125,
+              render: (_: unknown, item: Contract) => {
+                const validity = contractValidity(item, todayKey);
+                if (validity === "active") return <Tag color="green">Vigente</Tag>;
+                if (validity === "finalized")
+                  return <Tag color="default">Concluido</Tag>;
+                if (validity === "upcoming")
+                  return <Tag color="gold">Por iniciar</Tag>;
+                return <Tag>Sin clasificar</Tag>;
+              },
             },
             {
               title: "Tipo",
@@ -860,10 +913,13 @@ export const ContractsModule: React.FC<{
               ),
             },
             {
-              title: "Monto",
-              width: 135,
+              title: "Monto con IVA",
+              width: 155,
+              sorter: (left: Contract, right: Contract) =>
+                contractAmountWithTax(left) - contractAmountWithTax(right),
+              sortDirections: ["ascend", "descend"],
               render: (_: unknown, item: Contract) =>
-                formatCurrency(contractTotal(item), item.currency),
+                formatCurrency(contractAmountWithTax(item), item.currency),
             },
             {
               title: "Acciones",

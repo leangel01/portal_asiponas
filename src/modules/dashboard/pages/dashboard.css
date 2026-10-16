@@ -127,11 +127,25 @@
 .contracts-table-section .ant-table-wrapper,
 .contracts-table-section .ant-table-container,
 .contracts-table-section .ant-table-content { max-width: 100%; }
+.contracts-table-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; padding: 12px 14px; border-left: 4px solid #a57f2c; border-radius: 5px; background: linear-gradient(100deg, rgba(18, 59, 81, .09), rgba(30, 91, 79, .04)); }
+.contracts-table-heading h5.ant-typography { margin: 0; color: #123b51; }
+.contracts-table-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.contracts-table-controls .ant-select { min-width: 190px; }
+.contracts-table-section .ant-table-thead > tr > th { color: #fff; font-weight: 700; background: #123b51; border-bottom: 3px solid #a57f2c; }
+.contracts-table-section .ant-table-thead > tr > th::before { background-color: rgba(255, 255, 255, .18) !important; }
+.contracts-table-section .ant-table-thead > tr > th.ant-table-column-sort { background: #0d5961; }
+.contracts-table-section .ant-table-thead > tr > th .ant-table-column-sorter { color: rgba(255, 255, 255, .72); }
+.contracts-table-section .ant-table-thead > tr > th .ant-table-column-sorter-up.active,
+.contracts-table-section .ant-table-thead > tr > th .ant-table-column-sorter-down.active { color: #e6d194; }
 .contracts-description-cell { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow-wrap: anywhere; }
 .contracts-row-actions { display: flex; align-items: stretch; flex-direction: column; gap: 5px; }
 .contracts-row-actions > .ant-btn { width: 100%; }
 .contracts-row-actions .ant-space { justify-content: center; }
 .contracts-row-actions .ant-space .ant-btn { padding-inline: 5px; }
+[data-theme="dark"] .contracts-table-heading { background: linear-gradient(100deg, rgba(141, 225, 206, .12), rgba(30, 91, 79, .16)); }
+[data-theme="dark"] .contracts-table-heading h5.ant-typography { color: #e6d194 !important; }
+[data-theme="dark"] .contracts-table-section .ant-table-thead > tr > th { color: #f2f7f5 !important; background: #203633; border-bottom-color: #a57f2c; }
+[data-theme="dark"] .contracts-table-section .ant-table-thead > tr > th.ant-table-column-sort { background: #28564e; }
 .contracts-detail-view { display: flex; flex-direction: column; gap: 14px; }
 .contracts-back-button { align-self: flex-start; }
 .contracts-detail-card { border-color: #d8d3c6; border-top: 3px solid #9b2247; background: rgba(255, 255, 255, .9); }
@@ -183,7 +197,15 @@
 .budget-filter-dropdown { display: flex; min-width: 190px; max-width: 300px; flex-direction: column; gap: 10px; padding: 10px 12px; }
 .budget-filter-dropdown .ant-checkbox-group { display: flex; max-height: 240px; flex-direction: column; gap: 6px; overflow-y: auto; }
 .budget-filter-dropdown > .ant-space { justify-content: space-between; }
-.budget-total-row > td { font-weight: 600; background: #fff8e7 !important; }
+.budget-items-table .ant-table-thead > tr > th { color: #fff; font-weight: 700; background: #123b51; border-bottom: 3px solid #a57f2c; }
+.budget-items-table .ant-table-thead > tr > th::before { background-color: rgba(255, 255, 255, .2) !important; }
+.budget-items-table .ant-table-thead > tr > th .ant-table-filter-trigger { color: #e6d194; }
+.budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter { color: rgba(255, 255, 255, .72); }
+.budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter-up.active,
+.budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter-down.active { color: #e6d194; }
+.budget-items-table .budget-total-row > td { color: #611232 !important; font-weight: 800; background: #f3e5b7 !important; border-top: 3px solid #a57f2c; }
+.budget-items-table .budget-total-row > td:first-child { border-left: 4px solid #9b2247; }
+.budget-items-table .budget-total-row .ant-typography { color: inherit; font-weight: 800; }
 .module-card .ant-table-container { overflow-x: auto; }
 
 .historical-timeline { padding: 4px 0 18px; }
@@ -277,7 +299,14 @@
 [data-theme="dark"] .budget-progress .ant-progress-bg { box-shadow: 0 0 13px rgba(251, 191, 36, .65); }
 [data-theme="dark"] .budget-progress-value { color: #b2c8c1; }
 [data-theme="dark"] .budget-items-heading { border-bottom-color: #2a4540; }
-[data-theme="dark"] .budget-total-row > td { background: #3b321d !important; }
+[data-theme="dark"] .budget-items-table .ant-table-thead > tr > th { color: #f2f7f5 !important; background: #203633; border-bottom-color: #e6d194; }
+[data-theme="dark"] .budget-items-table .ant-table-thead > tr > th .ant-table-filter-trigger,
+[data-theme="dark"] .budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter { color: #e6d194; }
+[data-theme="dark"] .budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter-up.active,
+[data-theme="dark"] .budget-items-table .ant-table-thead > tr > th .ant-table-column-sorter-down.active { color: #fff; }
+[data-theme="dark"] .budget-items-table .budget-total-row > td { color: #f8e7aa !important; background: #3b321d !important; border-top-color: #e6d194; }
+[data-theme="dark"] .budget-items-table .budget-total-row > td:first-child { border-left-color: #ef8ba8; }
+[data-theme="dark"] .budget-items-table .budget-total-row .ant-typography { color: inherit !important; }
 [data-theme="dark"] .historical-timeline-heading { border-bottom-color: #2a4540; }
 [data-theme="dark"] .historical-timeline-heading h4 { color: #f2f7f5; }
 [data-theme="dark"] .historical-timeline-year-label { border-color: #203633; background: #0f766e; }
